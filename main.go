@@ -20,7 +20,7 @@ func main() {
 		return
 	}
 
-	tor, err := torrent.Parse(string(content))
+	tor, err := torrent.Parse(content)
 	if err != nil {
 		fmt.Println("Torrent parsing error: ", err)
 	}
