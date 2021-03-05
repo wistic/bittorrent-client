@@ -2,7 +2,9 @@ package torrent
 
 import (
 	"crypto/sha1"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"github.com/IncSW/go-bencode"
 )
 
@@ -14,6 +16,11 @@ type Torrent struct {
 	PieceLength int64
 	Length      int64
 	Name        string
+}
+
+// String implements Stringer interface to properly print Torrent struct
+func (tor Torrent) String() string {
+	return fmt.Sprintf("Torrent of file %v of length %v with infoHash %v", tor.Name, tor.Length, hex.EncodeToString(tor.InfoHash[:]))
 }
 
 // splitHashes splits the give array of bytes to SHA1 hashes
@@ -32,6 +39,7 @@ func splitHashes(pieceArray []byte) ([][20]byte, error) {
 }
 
 // infoHash returns the 20 byte sha1 hash of the bencoded form of the info value
+// for more information refer https://www.bittorrent.org/beps/bep_0003.html
 func infoHash(info interface{}) ([20]byte, error) {
 	data, err := bencode.Marshal(info)
 	if err != nil {
