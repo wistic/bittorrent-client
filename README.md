@@ -1,1 +1,1 @@
-# bittorrent-client
+# bittorrent-go
