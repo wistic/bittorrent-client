@@ -2,7 +2,9 @@ package torrent
 
 import (
 	"crypto/sha1"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"github.com/IncSW/go-bencode"
 	"path/filepath"
 )
@@ -23,9 +25,9 @@ type Torrent struct {
 }
 
 // String implements Stringer interface to properly print Torrent struct
-//func (tor Torrent) String() string {
-//	return fmt.Sprintf("Torrent with Name %v contains %v files with infoHash %v", tor.Name, len(tor.Files), hex.EncodeToString(tor.InfoHash[:]))
-//}
+func (tor Torrent) String() string {
+	return fmt.Sprintf("Torrent Info\n\tName: %s\n\tNo. of files: %v\n\tTracker URL: %v\n\tinfo-hash: %v", tor.Name, len(tor.Files), tor.Announce, hex.EncodeToString(tor.InfoHash[:]))
+}
 
 // splitHashes splits the give array of bytes to SHA1 hashes
 func splitHashes(pieceArray []byte) ([][20]byte, error) {
@@ -67,7 +69,10 @@ func parseFilePaths(infoMap map[string]interface{}) ([]File, error) {
 			if !ok {
 				return nil, errors.New("file is not a map")
 			}
-			files[i].Length, _ = file["length"].(int64)
+			files[i].Length, ok = file["length"].(int64)
+			if !ok {
+				return nil, errors.New("file length is corrupt")
+			}
 			pathArray, ok := file["path"].([]interface{})
 			if !ok {
 				return nil, errors.New("file path is corrupt")
@@ -136,7 +141,10 @@ func Parse(code []byte) (Torrent, error) {
 		err := errors.New("torrent file corrupt: piece length missing")
 		return Torrent{}, err
 	}
-	name, _ := infoMap["name"].([]byte)
+	name, ok := infoMap["name"].([]byte)
+	if !ok {
+		return Torrent{}, errors.New("torrent name is missing")
+	}
 
 	tor := Torrent{
 		Announce:    string(announce),
