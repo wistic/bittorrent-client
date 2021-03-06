@@ -11,6 +11,7 @@ func main() {
 	args, err := cli.Parse()
 	if err != nil {
 		fmt.Println("Argument parsing error: ", err)
+		fmt.Println("Usage: bittorrent-go <path-to-torrent-file> <path-to-download-directory>")
 		return
 	}
 	fmt.Println(args)
