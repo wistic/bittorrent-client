@@ -4,15 +4,28 @@ import (
 	"bittorrent-go/peer"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/IncSW/go-bencode"
 )
 
 // Response represents the response sent by the tracker
 type Response struct {
-	InterVal int64
+	Interval int64
 	Peers    []peer.Peer
 }
 
+// Stringer implementation for Response
+func (resp Response) String() string {
+	out := "Tracker response\n"
+	out += fmt.Sprintf("\tInterval: %v\n", resp.Interval)
+	out += fmt.Sprintf("\t Peer info:\n")
+	for i, v := range resp.Peers {
+		out += fmt.Sprintf("\t\tIndex: %v\tIP: %v\tPort: %v\n", i, v.IP, v.Port)
+	}
+	return out
+}
+
+// parseCompactPeerMap parses the compact peerMap
 func parseCompactPeerMap(peerArray []byte) ([]peer.Peer, error) {
 	const peerSize = 6 // bep_0023: 4 for ip, 2 for port
 	peerCount := len(peerArray) / peerSize
@@ -57,7 +70,7 @@ func Parse(resp []byte) (Response, error) {
 		return Response{}, err
 	}
 	response := Response{
-		InterVal: interval,
+		Interval: interval,
 		Peers:    peers,
 	}
 	return response, nil
