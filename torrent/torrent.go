@@ -2,6 +2,7 @@ package torrent
 
 import (
 	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -29,7 +30,7 @@ func (tor Torrent) String() string {
 	res := "Torrent Info\n"
 	res += fmt.Sprintf("Name: %v\n", tor.Name)
 	res += fmt.Sprintf("Announce: %v\n", tor.Announce)
-	res += fmt.Sprintf("InfoHash: %v\n", tor.InfoHash)
+	res += fmt.Sprintf("InfoHash: %v\n", hex.EncodeToString(tor.InfoHash[:]))
 	res += fmt.Sprintf("PieceLength: %v\n", tor.PieceLength)
 	res += "Files:"
 	for i, file := range tor.Files {
@@ -37,6 +38,14 @@ func (tor Torrent) String() string {
 	}
 	return res
 	//return fmt.Sprintf("Torrent Info\n\tName: %s\n\tNo. of files: %v\n\tTracker URL: %v\n\tinfo-hash: %v", tor.Name, len(tor.Files), tor.Announce, hex.EncodeToString(tor.InfoHash[:]))
+}
+
+func (tor Torrent) Length() int64 {
+	var length int64
+	for _, v := range tor.Files {
+		length += v.Length
+	}
+	return length
 }
 
 // splitHashes splits the give array of bytes to SHA1 hashes

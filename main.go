@@ -3,6 +3,7 @@ package main
 import (
 	"bittorrent-go/cli"
 	"bittorrent-go/torrent"
+	"bittorrent-go/tracker"
 	"fmt"
 	"io/ioutil"
 )
@@ -27,5 +28,6 @@ func main() {
 		fmt.Println("Torrent parsing error: ", err)
 	}
 
-	fmt.Println(tor)
+	response, err := tracker.RequestTracker(tor, [20]byte{}, 9969)
+	tracker.Parse(response)
 }
