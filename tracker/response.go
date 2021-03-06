@@ -1,14 +1,64 @@
 package tracker
 
 import (
-	"fmt"
+	"bittorrent-go/peer"
+	"encoding/binary"
+	"errors"
 	"github.com/IncSW/go-bencode"
 )
 
-func Parse(resp []byte) {
+// Response represents the response sent by the tracker
+type Response struct {
+	InterVal int64
+	Peers    []peer.Peer
+}
+
+func parseCompactPeerMap(peerArray []byte) ([]peer.Peer, error) {
+	const peerSize = 6 // bep_0023: 4 for ip, 2 for port
+	peerCount := len(peerArray) / peerSize
+	if len(peerArray)%peerSize != 0 {
+		return nil, errors.New("peers string is corrupt")
+	}
+	peers := make([]peer.Peer, peerCount)
+	for i := 0; i < peerCount; i++ {
+		offset := i * peerSize
+		peers[i].IP = peerArray[offset : offset+4]
+		peers[i].Port = binary.BigEndian.Uint16(peerArray[offset+4 : offset+6])
+	}
+	return peers, nil
+}
+
+// Parse parses the response received from the tracker
+func Parse(resp []byte) (Response, error) {
 	data, err := bencode.Unmarshal(resp)
 	if err != nil {
-
+		return Response{}, err
 	}
-	fmt.Println(data)
+
+	dataMap, ok := data.(map[string]interface{})
+	if !ok {
+		return Response{}, errors.New("bad response from the tracker")
+	}
+	failure, ok := dataMap["failure reason"].([]byte)
+	if ok {
+		return Response{}, errors.New("tracker rejected request with reason '" + string(failure) + "'")
+	}
+	interval, ok := dataMap["interval"].(int64)
+	if !ok {
+		return Response{}, errors.New("invalid tracker interval")
+	}
+
+	peerArray, ok := dataMap["peers"].([]byte)
+	if !ok {
+		return Response{}, errors.New("list of peers is corrupt")
+	}
+	peers, err := parseCompactPeerMap(peerArray)
+	if err != nil {
+		return Response{}, err
+	}
+	response := Response{
+		InterVal: interval,
+		Peers:    peers,
+	}
+	return response, nil
 }

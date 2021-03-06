@@ -28,6 +28,15 @@ func main() {
 		fmt.Println("Torrent parsing error: ", err)
 	}
 
-	response, err := tracker.RequestTracker(tor, [20]byte{}, 9969)
-	tracker.Parse(response)
+	resp, err := tracker.RequestTracker(tor, [20]byte{}, 9969)
+	if err != nil {
+		fmt.Println("Tracker request error:", err)
+		return
+	}
+	response, err := tracker.Parse(resp)
+	if err != nil {
+		fmt.Println("Tracker response error:", err)
+		return
+	}
+	fmt.Println(response)
 }
