@@ -2,11 +2,11 @@ package torrent
 
 import (
 	"crypto/sha1"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/IncSW/go-bencode"
 	"path/filepath"
+
+	"github.com/IncSW/go-bencode"
 )
 
 type File struct {
@@ -26,7 +26,17 @@ type Torrent struct {
 
 // String implements Stringer interface to properly print Torrent struct
 func (tor Torrent) String() string {
-	return fmt.Sprintf("Torrent Info\n\tName: %s\n\tNo. of files: %v\n\tTracker URL: %v\n\tinfo-hash: %v", tor.Name, len(tor.Files), tor.Announce, hex.EncodeToString(tor.InfoHash[:]))
+	res := "Torrent Info\n"
+	res += fmt.Sprintf("Name: %v\n", tor.Name)
+	res += fmt.Sprintf("Announce: %v\n", tor.Announce)
+	res += fmt.Sprintf("InfoHash: %v\n", tor.InfoHash)
+	res += fmt.Sprintf("PieceLength: %v\n", tor.PieceLength)
+	res += "Files:"
+	for i, file := range tor.Files {
+		res += fmt.Sprintf("\tIndex:%v FilePath:%v Length:%v\n", i, file.Path, file.Length)
+	}
+	return res
+	//return fmt.Sprintf("Torrent Info\n\tName: %s\n\tNo. of files: %v\n\tTracker URL: %v\n\tinfo-hash: %v", tor.Name, len(tor.Files), tor.Announce, hex.EncodeToString(tor.InfoHash[:]))
 }
 
 // splitHashes splits the give array of bytes to SHA1 hashes
