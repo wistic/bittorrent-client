@@ -8,8 +8,8 @@ import (
 
 // Argument contains parsed cli data
 type Argument struct {
-	File       string
-	OutputPath string
+	Torrent string
+	Output  string
 }
 
 // checkPath checks if the file/folder represented by the given path exists
@@ -20,14 +20,20 @@ func checkPath(filename string) bool {
 
 // Parse parses the cli arguments
 func Parse() (Argument, error) {
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return Argument{}, err
+	}
+	output := flag.String("o", workingDir, "Output directory")
 	flag.Parse()
 	args := flag.Args()
-	if len(args) != 2 {
-		return Argument{}, errors.New("missing arguments")
+	if len(args) < 1 {
+		return Argument{}, errors.New("Missing arguments")
 	}
-	if checkPath(args[0]) || checkPath(args[1]) {
-		return Argument{}, errors.New("bad arguments")
+	torrent := args[0]
+	if checkPath(torrent) || checkPath(*output) {
+		return Argument{}, errors.New("Bad arguments")
 	}
-	result := Argument{args[0], args[1]}
+	result := Argument{torrent, *output}
 	return result, nil
 }

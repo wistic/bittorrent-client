@@ -13,8 +13,9 @@ func main() {
 		fmt.Println("Argument parsing error: ", err)
 		return
 	}
+	fmt.Println(args)
 
-	content, err := ioutil.ReadFile(args.File)
+	content, err := ioutil.ReadFile(args.Torrent)
 	if err != nil {
 		fmt.Println("File reading error: ", err)
 		return
