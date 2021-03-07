@@ -25,8 +25,8 @@ func (resp Response) String() string {
 	return out
 }
 
-// parseCompactPeerMap parses the compact peerMap
-func parseCompactPeerMap(peerArray []byte) ([]peer.Peer, error) {
+// parseCompactPeerArray parses the compact peerArray
+func parseCompactPeerArray(peerArray []byte) ([]peer.Peer, error) {
 	const peerSize = 6 // bep_0023: 4 for ip, 2 for port
 	peerCount := len(peerArray) / peerSize
 	if len(peerArray)%peerSize != 0 {
@@ -40,6 +40,16 @@ func parseCompactPeerMap(peerArray []byte) ([]peer.Peer, error) {
 	}
 	return peers, nil
 }
+
+// parsePeerArray parses non-compact peerArray
+//func parsePeerArray(peerArray []interface{}) ([]peer.Peer, error) {
+//	peerCount := len(peerArray)
+//	peers := make([]peer.Peer, peerCount)
+//	for i, v := range peerArray {
+//		fmt.Println(i, v)
+//	}
+//	return peers, nil
+//}
 
 // Parse parses the response received from the tracker
 func Parse(resp []byte) (Response, error) {
@@ -60,12 +70,12 @@ func Parse(resp []byte) (Response, error) {
 	if !ok {
 		return Response{}, errors.New("invalid tracker interval")
 	}
-
+	fmt.Println(dataMap["peers"])
 	peerArray, ok := dataMap["peers"].([]byte)
 	if !ok {
 		return Response{}, errors.New("list of peers is corrupt")
 	}
-	peers, err := parseCompactPeerMap(peerArray)
+	peers, err := parseCompactPeerArray(peerArray)
 	if err != nil {
 		return Response{}, err
 	}
