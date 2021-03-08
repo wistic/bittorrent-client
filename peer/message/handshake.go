@@ -53,6 +53,7 @@ func Decode(data []byte) (Handshake, error) {
 	return Handshake{Extension: extension, InfoHash: infoHash, PeerID: peerID}, nil
 }
 
+// String implements Stringer interface to properly print Handshake struct
 func (handshake Handshake) String() string {
 	res := "Handshake {\n"
 	res += fmt.Sprintln("\tExtension: ", hex.EncodeToString(handshake.Extension[:]))

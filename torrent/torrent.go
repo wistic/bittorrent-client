@@ -10,6 +10,7 @@ import (
 	"github.com/IncSW/go-bencode"
 )
 
+// File hold information of files present in .torrent
 type File struct {
 	Path   string
 	Length int64
@@ -40,6 +41,7 @@ func (tor Torrent) String() string {
 	//return fmt.Sprintf("Torrent Info\n\tName: %s\n\tNo. of files: %v\n\tTracker URL: %v\n\tinfo-hash: %v", tor.Name, len(tor.Files), tor.Announce, hex.EncodeToString(tor.InfoHash[:]))
 }
 
+// Length calculates the total length of all files in .torrent
 func (tor Torrent) Length() int64 {
 	var length int64
 	for _, v := range tor.Files {
