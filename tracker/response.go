@@ -4,7 +4,6 @@ import (
 	"bittorrent-go/peer"
 	"encoding/binary"
 	"errors"
-	"fmt"
 
 	"github.com/IncSW/go-bencode"
 )
@@ -13,17 +12,6 @@ import (
 type Response struct {
 	Interval int64
 	Peers    []peer.Peer
-}
-
-// Stringer implementation for Response
-func (resp Response) String() string {
-	out := "Tracker response\n"
-	out += fmt.Sprintf("\tInterval: %v\n", resp.Interval)
-	out += fmt.Sprintf("\t Peer info:\n")
-	for i, v := range resp.Peers {
-		out += fmt.Sprintf("\t\tIndex: %v\tIP: %v\tPort: %v\n", i, v.IP, v.Port)
-	}
-	return out
 }
 
 // parseCompactPeerArray parses the compact peerArray

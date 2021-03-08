@@ -2,9 +2,7 @@ package torrent
 
 import (
 	"crypto/sha1"
-	"encoding/hex"
 	"errors"
-	"fmt"
 	"path/filepath"
 
 	"github.com/IncSW/go-bencode"
@@ -24,21 +22,6 @@ type Torrent struct {
 	PieceLength int64
 	Files       []File
 	Name        string
-}
-
-// String implements Stringer interface to properly print Torrent struct
-func (tor Torrent) String() string {
-	res := "Torrent Info\n"
-	res += fmt.Sprintf("Name: %v\n", tor.Name)
-	res += fmt.Sprintf("Announce: %v\n", tor.Announce)
-	res += fmt.Sprintf("InfoHash: %v\n", hex.EncodeToString(tor.InfoHash[:]))
-	res += fmt.Sprintf("PieceLength: %v\n", tor.PieceLength)
-	res += "Files:"
-	for i, file := range tor.Files {
-		res += fmt.Sprintf("\tIndex:%v FilePath:%v Length:%v\n", i, file.Path, file.Length)
-	}
-	return res
-	//return fmt.Sprintf("Torrent Info\n\tName: %s\n\tNo. of files: %v\n\tTracker URL: %v\n\tinfo-hash: %v", tor.Name, len(tor.Files), tor.Announce, hex.EncodeToString(tor.InfoHash[:]))
 }
 
 // Length calculates the total length of all files in .torrent

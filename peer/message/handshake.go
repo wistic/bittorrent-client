@@ -2,9 +2,7 @@ package message
 
 import (
 	"bytes"
-	"encoding/hex"
 	"errors"
-	"fmt"
 )
 
 const protocolIdentifier = "BitTorrent protocol"
@@ -51,14 +49,4 @@ func Decode(data []byte) (Handshake, error) {
 	copy(infoHash[0:infoHashLength], data[1+len(protocolIdentifier)+extensionLength:])
 	copy(peerID[0:peerIDLength], data[1+len(protocolIdentifier)+extensionLength+infoHashLength:])
 	return Handshake{Extension: extension, InfoHash: infoHash, PeerID: peerID}, nil
-}
-
-// String implements Stringer interface to properly print Handshake struct
-func (handshake Handshake) String() string {
-	res := "Handshake {\n"
-	res += fmt.Sprintln("\tExtension: ", hex.EncodeToString(handshake.Extension[:]))
-	res += fmt.Sprintln("\tInfoHash: ", hex.EncodeToString(handshake.InfoHash[:]))
-	res += fmt.Sprintln("\tPeerID: ", hex.EncodeToString(handshake.PeerID[:]))
-	res += "}"
-	return res
 }
