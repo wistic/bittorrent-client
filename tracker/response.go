@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+
 	"github.com/IncSW/go-bencode"
 )
 
@@ -41,16 +42,6 @@ func parseCompactPeerArray(peerArray []byte) ([]peer.Peer, error) {
 	return peers, nil
 }
 
-// parsePeerArray parses non-compact peerArray
-//func parsePeerArray(peerArray []interface{}) ([]peer.Peer, error) {
-//	peerCount := len(peerArray)
-//	peers := make([]peer.Peer, peerCount)
-//	for i, v := range peerArray {
-//		fmt.Println(i, v)
-//	}
-//	return peers, nil
-//}
-
 // Parse parses the response received from the tracker
 func Parse(resp []byte) (Response, error) {
 	data, err := bencode.Unmarshal(resp)
@@ -70,7 +61,6 @@ func Parse(resp []byte) (Response, error) {
 	if !ok {
 		return Response{}, errors.New("invalid tracker interval")
 	}
-	fmt.Println(dataMap["peers"])
 	peerArray, ok := dataMap["peers"].([]byte)
 	if !ok {
 		return Response{}, errors.New("list of peers is corrupt")

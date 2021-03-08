@@ -6,6 +6,8 @@ import (
 	"bittorrent-go/tracker"
 	"fmt"
 	"io/ioutil"
+
+	"github.com/kr/pretty"
 )
 
 func main() {
@@ -15,14 +17,12 @@ func main() {
 		fmt.Println("Usage: bittorrent-go -o <path-to-download-directory> <path-to-torrent-file> ")
 		return
 	}
-	fmt.Println(args)
 
 	content, err := ioutil.ReadFile(args.Torrent)
 	if err != nil {
 		fmt.Println("File reading error: ", err)
 		return
 	}
-
 	tor, err := torrent.Parse(content)
 	if err != nil {
 		fmt.Println("Torrent parsing error: ", err)
@@ -38,5 +38,5 @@ func main() {
 		fmt.Println("Tracker response error:", err)
 		return
 	}
-	fmt.Println(response)
+	pretty.Println(response)
 }
