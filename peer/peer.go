@@ -1,7 +1,7 @@
 package peer
 
 import (
-	"bittorrent-go/peer/attribute"
+	"bittorrent-go/util"
 	"net"
 )
 
@@ -11,7 +11,7 @@ type Peer struct {
 	AmInterested   bool
 	PeerChoking    bool
 	PeerInterested bool
-	BitField       attribute.BitField
-	PeerID         attribute.PeerID
-	ConnectionInfo attribute.ConnectionInfo
+	BitField       util.BitField
+	PeerID         util.PeerID
+	ConnectionInfo util.ConnectionInfo
 }

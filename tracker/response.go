@@ -1,7 +1,7 @@
 package tracker
 
 import (
-	"bittorrent-go/peer/attribute"
+	"bittorrent-go/util"
 	"encoding/binary"
 	"errors"
 
@@ -11,17 +11,17 @@ import (
 // Response represents the response sent by the tracker
 type Response struct {
 	Interval int64
-	Peers    []attribute.ConnectionInfo
+	Peers    []util.ConnectionInfo
 }
 
 // parseCompactPeerArray parses the compact peerArray
-func parseCompactPeerArray(peerArray []byte) ([]attribute.ConnectionInfo, error) {
+func parseCompactPeerArray(peerArray []byte) ([]util.ConnectionInfo, error) {
 	const peerSize = 6 // bep_0023: 4 for ip, 2 for port
 	peerCount := len(peerArray) / peerSize
 	if len(peerArray)%peerSize != 0 {
 		return nil, errors.New("peers string is corrupt")
 	}
-	peers := make([]attribute.ConnectionInfo, peerCount)
+	peers := make([]util.ConnectionInfo, peerCount)
 	for i := 0; i < peerCount; i++ {
 		offset := i * peerSize
 		peers[i].IP = peerArray[offset : offset+4]
