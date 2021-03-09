@@ -2,6 +2,7 @@ package main
 
 import (
 	"bittorrent-go/cli"
+	"bittorrent-go/peer/attribute"
 	"bittorrent-go/torrent"
 	"bittorrent-go/tracker"
 	"fmt"
@@ -28,7 +29,9 @@ func main() {
 		fmt.Println("Torrent parsing error: ", err)
 	}
 
-	resp, err := tracker.RequestTracker(tor, [20]byte{}, 9969)
+	peerID := attribute.GeneratePeerID()
+
+	resp, err := tracker.RequestTracker(tor, peerID, 9969)
 	if err != nil {
 		fmt.Println("Tracker request error:", err)
 		return
