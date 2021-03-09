@@ -38,5 +38,5 @@ func main() {
 		fmt.Println("Tracker response error:", err)
 		return
 	}
-	pretty.Println(response)
+	_, _ = pretty.Println(response)
 }

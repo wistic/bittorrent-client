@@ -34,7 +34,7 @@ func Encode(handshake Handshake) []byte {
 	return buffer
 }
 
-// Decode the Hanshake struct
+// Decode the Handshake struct
 func Decode(data []byte) (Handshake, error) {
 	if len(data) != handshakeLength {
 		return Handshake{}, errors.New("Handshake length  mismatched")
