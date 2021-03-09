@@ -19,7 +19,10 @@ type Handshake struct {
 }
 
 // Encode the Handshake struct
-func Encode(handshake Handshake) []byte {
+func (handshake *Handshake) Encode() ([]byte, error) {
+	if handshake == nil {
+		return nil, errors.New("handshake is empty")
+	}
 	buffer := make([]byte, handshakeLength)
 	index := 0
 	buffer[index] = byte(len(protocolIdentifier))
@@ -31,22 +34,23 @@ func Encode(handshake Handshake) []byte {
 	copy(buffer[index:], handshake.InfoHash[:])
 	index += len(handshake.InfoHash)
 	copy(buffer[index:], handshake.PeerID[:])
-	return buffer
+	return buffer, nil
 }
 
 // Decode the Handshake struct
-func Decode(data []byte) (Handshake, error) {
+func (handshake *Handshake) Decode(data []byte) error {
 	if len(data) != handshakeLength {
-		return Handshake{}, errors.New("Handshake length  mismatched")
+		return errors.New("Handshake length  mismatched")
 	}
 	if data[0] != byte(len(protocolIdentifier)) || bytes.Equal(data[1:len(protocolIdentifier)], []byte(protocolIdentifier)) {
-		return Handshake{}, errors.New("protocol id mismatch")
+		return errors.New("protocol id mismatch")
 	}
 	extension := [extensionLength]byte{}
 	infoHash := [infoHashLength]byte{}
 	peerID := [peerIDLength]byte{}
-	copy(extension[0:extensionLength], data[1+len(protocolIdentifier):])
-	copy(infoHash[0:infoHashLength], data[1+len(protocolIdentifier)+extensionLength:])
-	copy(peerID[0:peerIDLength], data[1+len(protocolIdentifier)+extensionLength+infoHashLength:])
-	return Handshake{Extension: extension, InfoHash: infoHash, PeerID: peerID}, nil
+	copy(extension[:], data[1+len(protocolIdentifier):])
+	copy(infoHash[:], data[1+len(protocolIdentifier)+extensionLength:])
+	copy(peerID[:], data[1+len(protocolIdentifier)+extensionLength+infoHashLength:])
+	handshake.Extension, handshake.InfoHash, handshake.PeerID = extension, infoHash, peerID
+	return nil
 }
