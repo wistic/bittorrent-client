@@ -1,11 +1,17 @@
 package peer
 
 import (
+	"bittorrent-go/peer/attribute"
 	"net"
 )
 
-// PCInfo stores connection details about each peer
-type PCInfo struct {
-	IP   net.IP
-	Port uint16
+type Peer struct {
+	Connection     net.Conn
+	AmChoking      bool
+	AmInterested   bool
+	PeerChoking    bool
+	PeerInterested bool
+	BitField       attribute.BitField
+	PeerID         attribute.PeerID
+	ConnectionInfo attribute.ConnectionInfo
 }
