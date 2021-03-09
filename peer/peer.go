@@ -4,8 +4,8 @@ import (
 	"net"
 )
 
-// PCInfo stores connection details about each peer
-type PCInfo struct {
+// Address stores address details about each peer
+type Address struct {
 	IP   net.IP
 	Port uint16
 }
