@@ -3,7 +3,6 @@ package peer
 import (
 	"bittorrent-go/peer/message"
 	"bittorrent-go/util"
-	"bufio"
 	"fmt"
 	"github.com/kr/pretty"
 	"net"
@@ -11,32 +10,24 @@ import (
 )
 
 func Worker(address *util.Address, peerID *util.PeerID, infoHash *util.Hash) {
-	fmt.Print(address.String())
 	connection, err := net.DialTimeout("tcp", address.String(), 6*time.Second)
 	if err != nil {
-		fmt.Print("Temp Log:", err)
+		fmt.Println("connection error:", err)
 		return
 	}
 	defer connection.Close()
-	writer := bufio.NewWriter(connection)
-	handshake := message.NewHandshake(util.DefaultExtension(), infoHash, peerID)
-	err = message.WriteHandshake(handshake, writer)
+	handshake := message.Handshake{Protocol: "BitTorrent protocol", Extension: *util.DefaultExtension(), InfoHash: *infoHash, PeerID: *peerID}
+	err = message.WriteHS(&handshake, connection)
 	if err != nil {
-		fmt.Print("Temp Log:", err)
+		fmt.Println("handshake send error:", err)
 		return
 	}
-	err = writer.Flush()
+	receivedHandshake, err := message.ReadHS(connection)
 	if err != nil {
-		fmt.Print("Temp Log:", err)
+		fmt.Println("handshake receive error:", err)
 		return
 	}
-	reader := bufio.NewReader(connection)
-	receivedHandshake, err := message.ReadHandshake(reader)
-	if err != nil {
-		fmt.Print("Temp Log:", err)
-		return
-	}
-	pretty.Print(handshake)
-	pretty.Print(receivedHandshake)
+	pretty.Println(handshake)
+	pretty.Println(receivedHandshake)
 	pretty.Diff(handshake, receivedHandshake)
 }
