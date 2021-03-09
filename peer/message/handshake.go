@@ -40,7 +40,7 @@ func Decode(data []byte) (Handshake, error) {
 		return Handshake{}, errors.New("Handshake length  mismatched")
 	}
 	if data[0] != byte(len(protocolIdentifier)) || bytes.Equal(data[1:len(protocolIdentifier)], []byte(protocolIdentifier)) {
-		return Handshake{}, errors.New("Protocol Id mismatch")
+		return Handshake{}, errors.New("protocol id mismatch")
 	}
 	extension := [extensionLength]byte{}
 	infoHash := [infoHashLength]byte{}
