@@ -20,11 +20,7 @@ type Handshake struct {
 	PeerID    util.PeerID
 }
 
-func NewHandshake(protocol *string, extension *util.Extension, infoHash *util.Hash, peerID *util.PeerID) *Handshake {
-	return &Handshake{Protocol: *protocol, Extension: *extension, InfoHash: *infoHash, PeerID: *peerID}
-}
-
-func WriteHS(handshake *Handshake, writer io.Writer) error {
+func WriteHandshake(handshake *Handshake, writer io.Writer) error {
 	if handshake == nil {
 		return errors.New("handshake is empty")
 	}
@@ -44,27 +40,27 @@ func WriteHS(handshake *Handshake, writer io.Writer) error {
 	return err
 }
 
-func ReadHS(reader io.Reader) (*Handshake, error) {
+func ReadHandshake(reader io.Reader) (*Handshake, error) {
 	lengthBuff := make([]byte, 1)
 	_, err := reader.Read(lengthBuff[:])
 	if err != nil {
 		return nil, err
 	}
-	extension := util.DefaultExtension()
-	infoHash := util.DefaultHash()
-	peerID := util.DefaultPeerID()
+	extension := util.Extension{}
+	infoHash := util.Hash{}
+	peerID := util.PeerID{}
 	protocolLength := int(lengthBuff[0])
 	if protocolLength == 0 {
 		return nil, errors.New("protocol identifier is empty")
 	}
-	buff := make([]byte, protocolLength+len(extension.Value)+len(infoHash.Value)+len(peerID.Value))
+	buff := make([]byte, protocolLength+len(extension.Slice())+len(infoHash.Slice())+len(peerID.Slice()))
 	_, err = reader.Read(buff[:])
 	if err != nil {
 		return nil, err
 	}
 	protocol := string(buff[0:protocolLength])
-	copy(extension.Value[:], buff[protocolLength:])
-	copy(infoHash.Value[:], buff[protocolLength+len(extension.Value):])
-	copy(peerID.Value[:], buff[protocolLength+len(extension.Value)+len(infoHash.Value):])
-	return NewHandshake(&protocol, extension, infoHash, peerID), nil
+	copy(extension.Slice(), buff[protocolLength:])
+	copy(infoHash.Slice(), buff[protocolLength+len(extension.Value):])
+	copy(peerID.Slice(), buff[protocolLength+len(extension.Value)+len(infoHash.Value):])
+	return &Handshake{protocol, extension, infoHash, peerID}, nil
 }

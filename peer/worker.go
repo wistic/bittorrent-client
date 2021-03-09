@@ -16,13 +16,13 @@ func Worker(address *util.Address, peerID *util.PeerID, infoHash *util.Hash) {
 		return
 	}
 	defer connection.Close()
-	handshake := message.Handshake{Protocol: "BitTorrent protocol", Extension: *util.DefaultExtension(), InfoHash: *infoHash, PeerID: *peerID}
-	err = message.WriteHS(&handshake, connection)
+	handshake := message.Handshake{Protocol: "BitTorrent protocol", Extension: util.Extension{}, InfoHash: *infoHash, PeerID: *peerID}
+	err = message.WriteHandshake(&handshake, connection)
 	if err != nil {
 		fmt.Println("handshake send error:", err)
 		return
 	}
-	receivedHandshake, err := message.ReadHS(connection)
+	receivedHandshake, err := message.ReadHandshake(connection)
 	if err != nil {
 		fmt.Println("handshake receive error:", err)
 		return

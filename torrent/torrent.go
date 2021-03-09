@@ -26,7 +26,7 @@ type Torrent struct {
 }
 
 // Length calculates the total length of all files in .torrent
-func (tor Torrent) Length() int64 {
+func (tor *Torrent) Length() int64 {
 	var length int64
 	for _, v := range tor.Files {
 		length += v.Length
@@ -56,7 +56,7 @@ func infoHash(info interface{}) (*util.Hash, error) {
 	if err != nil {
 		return nil, err
 	}
-	return util.NewHash(sha1.Sum(data)), nil
+	return &util.Hash{Value: sha1.Sum(data)}, nil
 }
 
 // parseFilePaths parses the file paths from files field in the infoMap

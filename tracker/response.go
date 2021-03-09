@@ -24,7 +24,7 @@ func parseCompactPeerArray(peerArray []byte) ([]util.Address, error) {
 	peers := make([]util.Address, peerCount)
 	for i := 0; i < peerCount; i++ {
 		offset := i * peerSize
-		peers[i] = *util.NewAddress(peerArray[offset:offset+4], binary.BigEndian.Uint16(peerArray[offset+4:offset+6]))
+		peers[i] = util.Address{IP: peerArray[offset : offset+4], Port: binary.BigEndian.Uint16(peerArray[offset+4 : offset+6])}
 	}
 	return peers, nil
 }

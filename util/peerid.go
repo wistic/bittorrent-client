@@ -13,24 +13,19 @@ type PeerID struct {
 	Value [20]byte
 }
 
-// NewPeerID constructs PeerID
-func NewPeerID(value [20]byte) *PeerID {
-	return &PeerID{Value: value}
-}
-
-func DefaultPeerID() *PeerID {
-	return NewPeerID([20]byte{})
-}
-
 // GeneratePeerID generates a random PeerID for our client
 func GeneratePeerID() *PeerID {
 	rand.Seed(time.Now().UnixNano())
 	peerID := [20]byte{}
 	copy(peerID[:], "-BG0001-"+strconv.Itoa(rand.Intn(max-min)+min))
-	return NewPeerID(peerID)
+	return &PeerID{Value: peerID}
 }
 
 // String
 func (peerID *PeerID) String() string {
 	return string(peerID.Value[:])
+}
+
+func (peerID *PeerID) Slice() []byte {
+	return peerID.Value[:]
 }
