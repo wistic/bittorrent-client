@@ -13,5 +13,5 @@ type Peer struct {
 	PeerInterested bool
 	BitField       util.BitField
 	PeerID         util.PeerID
-	ConnectionInfo util.ConnectionInfo
+	ConnectionInfo util.Address
 }

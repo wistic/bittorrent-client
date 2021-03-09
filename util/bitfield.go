@@ -3,16 +3,23 @@ package util
 import "errors"
 
 // BitField represents which pieces the peer has
-type BitField []byte
+type BitField struct {
+	Value []byte
+}
+
+// NewBitField constructs BitField
+func NewBitField(value []byte) *BitField {
+	return &BitField{Value: value}
+}
 
 // CheckPiece tells if a peer has the piece at the given index
 func (bitfield BitField) CheckPiece(index int) (bool, error) {
 	byteIndex := index / 8
 	byteOffset := index % 8
-	if byteIndex < 0 || byteIndex >= len(bitfield) {
+	if byteIndex < 0 || byteIndex >= len(bitfield.Value) {
 		return false, errors.New("piece index out of bounds")
 	}
-	check := (bitfield[byteIndex]>>(7-byteOffset))&1 == 1
+	check := (bitfield.Value[byteIndex]>>(7-byteOffset))&1 == 1
 	return check, nil
 }
 
@@ -21,9 +28,9 @@ func (bitfield BitField) SetPiece(index int) error {
 	byteIndex := index / 8
 	byteOffset := index % 8
 
-	if byteIndex < 0 || byteIndex >= len(bitfield) {
+	if byteIndex < 0 || byteIndex >= len(bitfield.Value) {
 		return errors.New("piece index out of bounds")
 	}
-	bitfield[byteIndex] = bitfield[byteIndex] | (1 << (7 - byteOffset))
+	bitfield.Value[byteIndex] = bitfield.Value[byteIndex] | (1 << (7 - byteOffset))
 	return nil
 }

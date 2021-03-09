@@ -1,6 +1,7 @@
 package torrent
 
 import (
+	"bittorrent-go/util"
 	"crypto/sha1"
 	"errors"
 	"path/filepath"
@@ -8,17 +9,17 @@ import (
 	"github.com/IncSW/go-bencode"
 )
 
-// File hold information of files present in .torrent
+// File store file data
 type File struct {
 	Path   string
 	Length int64
 }
 
-// Torrent holds .torrent file data
+// Torrent stores .torrent file data
 type Torrent struct {
 	Announce    string
-	InfoHash    [20]byte
-	PieceHashes [][20]byte
+	InfoHash    util.Hash
+	PieceHashes []util.Hash
 	PieceLength int64
 	Files       []File
 	Name        string
@@ -34,34 +35,33 @@ func (tor Torrent) Length() int64 {
 }
 
 // splitHashes splits the give array of bytes to SHA1 hashes
-func splitHashes(pieceArray []byte) ([][20]byte, error) {
+func splitHashes(pieceArray []byte) ([]util.Hash, error) {
 	if len(pieceArray)%20 != 0 {
 		err := errors.New("piece hash information is corrupt")
 		return nil, err
 	}
 	numHashes := len(pieceArray) / 20
-	hashes := make([][20]byte, numHashes)
+	hashes := make([]util.Hash, numHashes)
 
 	for i := 0; i < numHashes; i++ {
-		copy(hashes[i][:], pieceArray[i*20:(i+1)*20])
+		copy(hashes[i].Value[:], pieceArray[i*20:(i+1)*20])
 	}
 	return hashes, nil
 }
 
 // infoHash returns the 20 byte sha1 hash of the bencoded form of the info value
 // for more information refer https://www.bittorrent.org/beps/bep_0003.html
-func infoHash(info interface{}) ([20]byte, error) {
+func infoHash(info interface{}) (*util.Hash, error) {
 	data, err := bencode.Marshal(info)
 	if err != nil {
-		return [20]byte{}, err
+		return nil, err
 	}
-	return sha1.Sum(data), nil
+	return util.NewHash(sha1.Sum(data)), nil
 }
 
 // parseFilePaths parses the file paths from files field in the infoMap
 func parseFilePaths(infoMap map[string]interface{}) ([]File, error) {
 	if length, ok := infoMap["length"].(int64); ok {
-
 		return []File{{"", length}}, nil
 	}
 
@@ -98,65 +98,65 @@ func parseFilePaths(infoMap map[string]interface{}) ([]File, error) {
 }
 
 // Parse parses the torrent code
-func Parse(code []byte) (Torrent, error) {
+func Parse(code []byte) (*Torrent, error) {
 	data, err := bencode.Unmarshal(code)
 	if err != nil {
-		return Torrent{}, err
+		return nil, err
 	}
 
 	dataMap, ok := data.(map[string]interface{})
 	if !ok {
 		err := errors.New("torrent file corrupt: dataMap is not a dictionary")
-		return Torrent{}, err
+		return nil, err
 	}
 	infoMap, ok := dataMap["info"].(map[string]interface{})
 	if !ok {
 		err := errors.New("torrent file corrupt: infoMap is not a dictionary")
-		return Torrent{}, err
+		return nil, err
 	}
 
 	pieceArray, ok := infoMap["pieces"].([]byte)
 	if !ok {
 		err := errors.New("torrent file corrupt: pieces is not an array")
-		return Torrent{}, err
+		return nil, err
 	}
 	hashes, err := splitHashes(pieceArray)
 	if err != nil {
-		return Torrent{}, err
+		return nil, err
 	}
 
 	infoHash, err := infoHash(dataMap["info"])
 	if err != nil {
-		return Torrent{}, err
+		return nil, err
 	}
 
 	files, err := parseFilePaths(infoMap)
 	if err != nil {
-		return Torrent{}, err
+		return nil, err
 	}
 
 	announce, ok := dataMap["announce"].([]byte)
 	if !ok {
 		err := errors.New("torrent file corrupt: tracker url missing")
-		return Torrent{}, err
+		return nil, err
 	}
 	pieceLength, ok := infoMap["piece length"].(int64)
 	if !ok {
 		err := errors.New("torrent file corrupt: piece length missing")
-		return Torrent{}, err
+		return nil, err
 	}
 	name, ok := infoMap["name"].([]byte)
 	if !ok {
-		return Torrent{}, errors.New("torrent name is missing")
+		return nil, errors.New("torrent name is missing")
 	}
 
 	tor := Torrent{
 		Announce:    string(announce),
-		InfoHash:    infoHash,
+		InfoHash:    *infoHash,
 		PieceHashes: hashes,
 		PieceLength: pieceLength,
 		Files:       files,
 		Name:        string(name),
 	}
-	return tor, nil
+	return &tor, nil
 }

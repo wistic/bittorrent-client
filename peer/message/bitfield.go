@@ -14,11 +14,11 @@ func (bitfield *BitField) Encode() ([]byte, error) {
 	if bitfield == nil {
 		return nil, errors.New("bitfield is empty")
 	}
-	length := 1 + len(bitfield.Field)
+	length := 1 + len(bitfield.Field.Value)
 	buffer := make([]byte, 4+length)
 	binary.BigEndian.PutUint32(buffer[0:4], uint32(length))
 	buffer[4] = byte(MsgBitfield)
-	copy(buffer[5:], bitfield.Field)
+	copy(buffer[5:], bitfield.Field.Value)
 	return buffer, nil
 }
 
@@ -35,6 +35,6 @@ func (bitfield *BitField) Decode(data []byte) error {
 	if messageID(data[4]) != MsgBitfield {
 		return errors.New("not a bitfield message")
 	}
-	bitfield.Field = data[5:]
+	bitfield.Field.Value = data[5:]
 	return nil
 }

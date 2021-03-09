@@ -31,14 +31,9 @@ func main() {
 
 	peerID := util.GeneratePeerID()
 
-	resp, err := tracker.RequestTracker(tor, peerID, 9969)
+	response, err := tracker.RequestTracker(tor, peerID, 9969)
 	if err != nil {
 		fmt.Println("Tracker request error:", err)
-		return
-	}
-	response, err := tracker.Parse(resp)
-	if err != nil {
-		fmt.Println("Tracker response error:", err)
 		return
 	}
 	_, _ = pretty.Println(response)
