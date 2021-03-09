@@ -2,6 +2,7 @@ package main
 
 import (
 	"bittorrent-go/cli"
+	"bittorrent-go/peer"
 	"bittorrent-go/torrent"
 	"bittorrent-go/tracker"
 	"bittorrent-go/util"
@@ -37,4 +38,5 @@ func main() {
 		return
 	}
 	_, _ = pretty.Println(response)
+	peer.Worker(&response.Peers[0], peerID, &tor.InfoHash)
 }

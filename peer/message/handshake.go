@@ -2,6 +2,7 @@ package message
 
 import (
 	"bittorrent-go/util"
+	"bufio"
 	"bytes"
 	"errors"
 )
@@ -19,42 +20,69 @@ type Handshake struct {
 	PeerID    util.PeerID
 }
 
-func NewHandshake(extension util.Extension, infoHash util.Hash, peerID util.PeerID) *Handshake {
-	return &Handshake{Extension: extension, InfoHash: infoHash, PeerID: peerID}
+func NewHandshake(extension *util.Extension, infoHash *util.Hash, peerID *util.PeerID) *Handshake {
+	return &Handshake{Extension: *extension, InfoHash: *infoHash, PeerID: *peerID}
 }
 
-// EncodeHandshake the Handshake struct
-func EncodeHandshake(handshake *Handshake) ([]byte, error) {
+func WriteHandshake(handshake *Handshake, writer *bufio.Writer) error {
 	if handshake == nil {
-		return nil, errors.New("handshake is empty")
+		return errors.New("handshake is empty")
 	}
-	buffer := make([]byte, handshakeLength)
-	index := 0
-	buffer[index] = byte(len(protocolIdentifier))
-	index++
-	copy(buffer[index:], protocolIdentifier)
-	index += len(protocolIdentifier)
-	copy(buffer[index:], handshake.Extension.Value[:])
-	index += len(handshake.Extension.Value)
-	copy(buffer[index:], handshake.InfoHash.Value[:])
-	index += len(handshake.InfoHash.Value)
-	copy(buffer[index:], handshake.PeerID.Value[:])
-	return buffer, nil
+	identifierLength := [1]byte{byte(len(protocolIdentifier))}
+	_, err := writer.Write(identifierLength[:])
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write([]byte(protocolIdentifier))
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write(handshake.Extension.Value[:])
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write(handshake.InfoHash.Value[:])
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write(handshake.PeerID.Value[:])
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-// DecodeHandshake the Handshake struct
-func DecodeHandshake(data []byte) (*Handshake, error) {
-	if len(data) != handshakeLength {
-		return nil, errors.New("Handshake length  mismatched")
+func ReadHandshake(reader *bufio.Reader) (*Handshake, error) {
+	identifierLength := [1]byte{}
+	_, err := reader.Read(identifierLength[:])
+	if err != nil {
+		return nil, err
 	}
-	if data[0] != byte(len(protocolIdentifier)) || bytes.Equal(data[1:len(protocolIdentifier)], []byte(protocolIdentifier)) {
-		return nil, errors.New("protocol id mismatch")
+	if identifierLength[0] != byte(len(protocolIdentifier)) {
+		return nil, errors.New("protocol identifier length  mismatched")
+	}
+	protocolIdentifierReceived := [len(protocolIdentifier)]byte{}
+	_, err = reader.Read(protocolIdentifierReceived[:])
+	if err != nil {
+		return nil, err
+	}
+	if !bytes.Equal(protocolIdentifierReceived[:], []byte(protocolIdentifier)) {
+		return nil, errors.New("protocol identifier mismatched")
 	}
 	extension := util.DefaultExtension()
+	_, err = reader.Read(extension.Value[:])
+	if err != nil {
+		return nil, err
+	}
 	infoHash := util.DefaultHash()
+	_, err = reader.Read(infoHash.Value[:])
+	if err != nil {
+		return nil, err
+	}
 	peerID := util.DefaultPeerID()
-	copy(extension.Value[:], data[1+len(protocolIdentifier):])
-	copy(infoHash.Value[:], data[1+len(protocolIdentifier)+len(extension.Value):])
-	copy(peerID.Value[:], data[1+len(protocolIdentifier)+len(extension.Value)+len(infoHash.Value):])
-	return NewHandshake(*extension, *infoHash, *peerID), nil
+	_, err = reader.Read(peerID.Value[:])
+	if err != nil {
+		return nil, err
+	}
+	return NewHandshake(extension, infoHash, peerID), nil
 }
