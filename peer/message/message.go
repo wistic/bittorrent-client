@@ -2,6 +2,11 @@ package message
 
 type messageID uint8
 
+type Message interface {
+	getMessageID() messageID
+	getPayload() []byte
+}
+
 const (
 	// MsgChoke chokes the receiver
 	MsgChoke messageID = 0
