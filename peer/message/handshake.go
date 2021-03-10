@@ -6,12 +6,6 @@ import (
 	"io"
 )
 
-const protocolIdentifier = "BitTorrent protocol"
-const extensionLength = 8
-const infoHashLength = 20
-const peerIDLength = 20
-const handshakeLength = 1 + len(protocolIdentifier) + extensionLength + infoHashLength + peerIDLength
-
 // Handshake contains data used in protocol handshake
 type Handshake struct {
 	Protocol  string
@@ -42,9 +36,11 @@ func WriteHandshake(handshake *Handshake, writer io.Writer) error {
 
 func ReadHandshake(reader io.Reader) (*Handshake, error) {
 	lengthBuff := make([]byte, 1)
-	_, err := reader.Read(lengthBuff[:])
+	n, err := reader.Read(lengthBuff)
 	if err != nil {
 		return nil, err
+	} else if n != 1 {
+		return nil, errors.New("length buffer empty")
 	}
 	extension := util.Extension{}
 	infoHash := util.Hash{}
@@ -53,10 +49,13 @@ func ReadHandshake(reader io.Reader) (*Handshake, error) {
 	if protocolLength == 0 {
 		return nil, errors.New("protocol identifier is empty")
 	}
-	buff := make([]byte, protocolLength+len(extension.Slice())+len(infoHash.Slice())+len(peerID.Slice()))
-	_, err = reader.Read(buff[:])
+	payloadLength := protocolLength + len(extension.Slice()) + len(infoHash.Slice()) + len(peerID.Slice())
+	buff := make([]byte, payloadLength)
+	n, err = reader.Read(buff)
 	if err != nil {
 		return nil, err
+	} else if n != payloadLength {
+		return nil, errors.New("handshake payload is corrupt")
 	}
 	protocol := string(buff[0:protocolLength])
 	copy(extension.Slice(), buff[protocolLength:])

@@ -22,8 +22,8 @@ func (request *Request) GetPayload() []byte {
 	return buffer
 }
 
-func (request *Request) Decode(data []byte) {
-	request.Index = binary.BigEndian.Uint32(data[5:9])
-	request.Begin = binary.BigEndian.Uint32(data[9:13])
-	request.Length = binary.BigEndian.Uint32(data[13:])
+func (request *Request) Deserialize(data []byte) {
+	request.Index = binary.BigEndian.Uint32(data[0:4])
+	request.Begin = binary.BigEndian.Uint32(data[4:8])
+	request.Length = binary.BigEndian.Uint32(data[8:])
 }

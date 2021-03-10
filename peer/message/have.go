@@ -18,6 +18,6 @@ func (have *Have) GetPayload() []byte {
 	return buffer
 }
 
-func (have *Have) Decode(data []byte) {
-	have.Index = binary.BigEndian.Uint32(data[5:9])
+func (have *Have) Deserialize(data []byte) {
+	have.Index = binary.BigEndian.Uint32(data)
 }

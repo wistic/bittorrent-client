@@ -18,6 +18,6 @@ func (bitfield *BitField) GetPayload() []byte {
 	return buffer
 }
 
-func (bitfield *BitField) Decode(data []byte) {
-	bitfield.Field.Value = data[5:]
+func (bitfield *BitField) Deserialize(data []byte) {
+	bitfield.Field.Value = data
 }

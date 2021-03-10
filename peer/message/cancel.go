@@ -22,8 +22,8 @@ func (cancel *Cancel) GetPayload() []byte {
 	return buffer
 }
 
-func (cancel *Cancel) Decode(data []byte) {
-	cancel.Index = binary.BigEndian.Uint32(data[5:9])
-	cancel.Begin = binary.BigEndian.Uint32(data[9:13])
-	cancel.Length = binary.BigEndian.Uint32(data[13:])
+func (cancel *Cancel) Deserialize(data []byte) {
+	cancel.Index = binary.BigEndian.Uint32(data[0:4])
+	cancel.Begin = binary.BigEndian.Uint32(data[4:8])
+	cancel.Length = binary.BigEndian.Uint32(data[8:])
 }

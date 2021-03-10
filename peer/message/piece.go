@@ -23,8 +23,8 @@ func (piece *Piece) GetPayload() []byte {
 	return buffer
 }
 
-func (piece *Piece) Decode(data []byte) {
-	piece.Index = binary.BigEndian.Uint32(data[5:9])
-	piece.Begin = binary.BigEndian.Uint32(data[9:13])
-	piece.Block = data[13:]
+func (piece *Piece) Deserialize(data []byte) {
+	piece.Index = binary.BigEndian.Uint32(data[0:4])
+	piece.Begin = binary.BigEndian.Uint32(data[4:8])
+	piece.Block = data[8:]
 }
