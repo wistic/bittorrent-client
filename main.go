@@ -8,8 +8,6 @@ import (
 	"bittorrent-go/util"
 	"fmt"
 	"io/ioutil"
-
-	"github.com/kr/pretty"
 )
 
 func main() {
@@ -37,6 +35,6 @@ func main() {
 		fmt.Println("Tracker request error:", err)
 		return
 	}
-	_, _ = pretty.Println(response)
-	peer.Worker(&response.Peers[0], peerID, &tor.InfoHash)
+
+	peer.StartWorker(&response.Peers[0], peerID, &tor.InfoHash)
 }

@@ -1,33 +1,16 @@
 package peer
 
 import (
-	"bittorrent-go/peer/message"
 	"bittorrent-go/util"
 	"fmt"
-	"github.com/kr/pretty"
-	"net"
-	"time"
 )
 
-func Worker(address *util.Address, peerID *util.PeerID, infoHash *util.Hash) {
-	connection, err := net.DialTimeout("tcp", address.String(), 6*time.Second)
+func StartWorker(address *util.Address, peerID *util.PeerID, infoHash *util.Hash) {
+	peer, err := AttemptConnection(address, peerID, infoHash)
 	if err != nil {
-		fmt.Println("connection error:", err)
+		fmt.Println("Could not establish a connection with", address.String(), ". Reason:", err)
 		return
 	}
-	defer connection.Close()
-	handshake := message.Handshake{Protocol: "BitTorrent protocol", Extension: util.Extension{}, InfoHash: *infoHash, PeerID: *peerID}
-	err = message.WriteHandshake(&handshake, connection)
-	if err != nil {
-		fmt.Println("handshake send error:", err)
-		return
-	}
-	receivedHandshake, err := message.ReadHandshake(connection)
-	if err != nil {
-		fmt.Println("handshake receive error:", err)
-		return
-	}
-	pretty.Println(handshake)
-	pretty.Println(receivedHandshake)
-	pretty.Diff(handshake, receivedHandshake)
+	defer peer.Connection.Close()
+	fmt.Println("Connected to", address.String())
 }
