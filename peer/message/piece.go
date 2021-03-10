@@ -10,14 +10,16 @@ type Piece struct {
 	Block []byte
 }
 
-func (piece *Piece) Encode() []byte {
-	length := 9 + len(piece.Block)
-	buffer := make([]byte, 4+length)
-	binary.BigEndian.PutUint32(buffer[0:4], uint32(length))
-	buffer[4] = byte(MsgPiece)
-	binary.BigEndian.PutUint32(buffer[5:9], piece.Index)
-	binary.BigEndian.PutUint32(buffer[9:13], piece.Begin)
-	copy(buffer[13:], piece.Block)
+func (piece *Piece) GetMessageID() MsgID {
+	return MsgPiece
+}
+
+func (piece *Piece) GetPayload() []byte {
+	length := 8 + len(piece.Block)
+	buffer := make([]byte, length)
+	binary.BigEndian.PutUint32(buffer[0:4], piece.Index)
+	binary.BigEndian.PutUint32(buffer[4:8], piece.Begin)
+	copy(buffer[8:], piece.Block)
 	return buffer
 }
 

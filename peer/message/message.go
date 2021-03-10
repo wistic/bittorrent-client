@@ -1,29 +1,29 @@
 package message
 
-type messageID uint8
+type MsgID uint8
 
 type Message interface {
-	getMessageID() messageID
-	getPayload() []byte
+	GetMessageID() MsgID
+	GetPayload() []byte
 }
 
 const (
 	// MsgChoke chokes the receiver
-	MsgChoke messageID = 0
+	MsgChoke MsgID = 0
 	// MsgUnchoke unchokes the receiver
-	MsgUnchoke messageID = 1
+	MsgUnchoke MsgID = 1
 	// MsgInterested expresses interest in receiving data
-	MsgInterested messageID = 2
+	MsgInterested MsgID = 2
 	// MsgNotInterested expresses disinterest in receiving data
-	MsgNotInterested messageID = 3
+	MsgNotInterested MsgID = 3
 	// MsgHave alerts the receiver that the sender has downloaded a piece
-	MsgHave messageID = 4
+	MsgHave MsgID = 4
 	// MsgBitfield encodes which pieces that the sender has downloaded
-	MsgBitfield messageID = 5
+	MsgBitfield MsgID = 5
 	// MsgRequest requests a block of data from the receiver
-	MsgRequest messageID = 6
+	MsgRequest MsgID = 6
 	// MsgPiece delivers a block of data to fulfill a request
-	MsgPiece messageID = 7
+	MsgPiece MsgID = 7
 	// MsgCancel cancels a request
-	MsgCancel messageID = 8
+	MsgCancel MsgID = 8
 )

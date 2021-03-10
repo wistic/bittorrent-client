@@ -10,14 +10,15 @@ type Request struct {
 	Length uint32
 }
 
-func (request *Request) Encode() []byte {
-	length := 13
-	buffer := make([]byte, 4+length)
-	binary.BigEndian.PutUint32(buffer[0:4], uint32(length))
-	buffer[4] = byte(MsgRequest)
-	binary.BigEndian.PutUint32(buffer[5:9], request.Index)
-	binary.BigEndian.PutUint32(buffer[9:13], request.Begin)
-	binary.BigEndian.PutUint32(buffer[13:], request.Length)
+func (request *Request) GetMessageID() MsgID {
+	return MsgRequest
+}
+
+func (request *Request) GetPayload() []byte {
+	buffer := make([]byte, 12)
+	binary.BigEndian.PutUint32(buffer[0:4], request.Index)
+	binary.BigEndian.PutUint32(buffer[4:8], request.Begin)
+	binary.BigEndian.PutUint32(buffer[8:], request.Length)
 	return buffer
 }
 

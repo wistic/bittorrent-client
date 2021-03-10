@@ -8,12 +8,13 @@ type Have struct {
 	Index uint32
 }
 
-func (have *Have) Encode() []byte {
-	length := 5
-	buffer := make([]byte, 4+length)
-	binary.BigEndian.PutUint32(buffer[0:4], uint32(length))
-	buffer[4] = byte(MsgHave)
-	binary.BigEndian.PutUint32(buffer[5:9], have.Index)
+func (have *Have) GetMessageID() MsgID {
+	return MsgHave
+}
+
+func (have *Have) GetPayload() []byte {
+	buffer := make([]byte, 4)
+	binary.BigEndian.PutUint32(buffer[:], have.Index)
 	return buffer
 }
 

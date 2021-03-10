@@ -10,14 +10,15 @@ type Cancel struct {
 	Length uint32
 }
 
-func (cancel *Cancel) Encode() []byte {
-	length := 13
-	buffer := make([]byte, 4+length)
-	binary.BigEndian.PutUint32(buffer[0:4], uint32(length))
-	buffer[4] = byte(MsgCancel)
-	binary.BigEndian.PutUint32(buffer[5:9], cancel.Index)
-	binary.BigEndian.PutUint32(buffer[9:13], cancel.Begin)
-	binary.BigEndian.PutUint32(buffer[13:], cancel.Length)
+func (cancel *Cancel) GetMessageID() MsgID {
+	return MsgCancel
+}
+
+func (cancel *Cancel) GetPayload() []byte {
+	buffer := make([]byte, 12)
+	binary.BigEndian.PutUint32(buffer[0:4], cancel.Index)
+	binary.BigEndian.PutUint32(buffer[4:8], cancel.Begin)
+	binary.BigEndian.PutUint32(buffer[8:], cancel.Length)
 	return buffer
 }
 
