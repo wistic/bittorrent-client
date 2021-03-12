@@ -8,6 +8,7 @@ import (
 	"bittorrent-go/util"
 	"fmt"
 	"io/ioutil"
+	"time"
 )
 
 func main() {
@@ -30,11 +31,18 @@ func main() {
 
 	peerID := util.GeneratePeerID()
 
-	response, err := tracker.RequestTracker(tor, peerID, 9969)
-	if err != nil {
-		fmt.Println("Tracker request error:", err)
-		return
-	}
+	trackerChannel := tracker.StartTrackerRoutine(tor, peerID, 9969)
+
+	response := <-trackerChannel.Response
+
+	//response, err := tracker.RequestTrackerHTTP(tor, peerID, 9969)
+	//if err != nil {
+	//	fmt.Println("Tracker request error:", err)
+	//	return
+	//}
 
 	peer.StartWorker(&response.Peers[0], peerID, &tor.InfoHash)
+	time.Sleep(time.Second * 6)
+	close(trackerChannel.Done)
+	time.Sleep(time.Second * 6)
 }

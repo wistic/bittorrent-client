@@ -9,10 +9,9 @@ import (
 
 // returns Conn interface and connection id to be used for Announce Part and requires url of tracker in string form
 
-func Connectudp(url string) (net.Conn, uint64, error) {
-
+func ConnectUDP(url string) (net.Conn, uint64, error) {
 	wbuffer := make([]byte, 16)                                    //buffer with connect request packet
-	rbuffer := make([]byte, 16)                                    //buffer to accept connect response packet
+	rbuffer := make([]byte, 16)                                    //buffer to accept connect Response packet
 	binary.BigEndian.PutUint64(wbuffer[0:], uint64(0x41727101980)) // protocol id magic constant
 	binary.BigEndian.PutUint32(wbuffer[8:], uint32(0))             // action(connect) 0
 	binary.BigEndian.PutUint32(wbuffer[12:], uint32(0))            //transaction id set as 0
@@ -51,7 +50,7 @@ func Connectudp(url string) (net.Conn, uint64, error) {
 	}
 
 	if n != len(rbuffer) {
-		return nil, 0, errors.New("invalid response received from tracker")
+		return nil, 0, errors.New("invalid Response received from tracker")
 	}
 	action := binary.BigEndian.Uint32(rbuffer[0:])
 	if action != uint32(0) {
@@ -64,5 +63,4 @@ func Connectudp(url string) (net.Conn, uint64, error) {
 	connectionid := binary.BigEndian.Uint64(rbuffer[8:])
 
 	return conn, connectionid, nil
-
 }

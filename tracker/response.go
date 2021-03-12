@@ -8,9 +8,9 @@ import (
 	"github.com/IncSW/go-bencode"
 )
 
-// Response represents the response sent by the tracker
+// Response represents the Response sent by the tracker
 type Response struct {
-	Interval int64
+	Interval uint64
 	Peers    []util.Address
 }
 
@@ -29,7 +29,7 @@ func parseCompactPeerArray(peerArray []byte) ([]util.Address, error) {
 	return peers, nil
 }
 
-// parse parses the response received from the tracker
+// parse parses the Response received from the tracker
 func parse(resp []byte) (*Response, error) {
 	data, err := bencode.Unmarshal(resp)
 	if err != nil {
@@ -38,7 +38,7 @@ func parse(resp []byte) (*Response, error) {
 
 	dataMap, ok := data.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("bad response from the tracker")
+		return nil, errors.New("bad Response from the tracker")
 	}
 	failure, ok := dataMap["failure reason"].([]byte)
 	if ok {
@@ -57,7 +57,7 @@ func parse(resp []byte) (*Response, error) {
 		return nil, err
 	}
 	response := Response{
-		Interval: interval,
+		Interval: uint64(interval),
 		Peers:    peers,
 	}
 	return &response, nil

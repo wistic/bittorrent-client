@@ -46,8 +46,8 @@ func requestTrackerHttp(tor *torrent.Torrent, peerID *util.PeerID, port uint16) 
 	return body, nil
 }
 
-// RequestTracker maker the request to tracker
-func RequestTracker(tor *torrent.Torrent, peerID *util.PeerID, port uint16) (*Response, error) {
+// RequestTrackerHTTP makes the request to tracker
+func RequestTrackerHTTP(tor *torrent.Torrent, peerID *util.PeerID, port uint16) (*Response, error) {
 	responseData, err := requestTrackerHttp(tor, peerID, port)
 	if err != nil {
 		return nil, err
