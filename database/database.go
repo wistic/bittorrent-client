@@ -11,7 +11,7 @@ type PeerData struct {
 	AmInterested   bool
 	PeerChoking    bool
 	PeerInterested bool
-	BitField       util.BitField
+	BitField       util.BitField // TODO: Add channel info here
 }
 
 // TODO: Add piece progress measure

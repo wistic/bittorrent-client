@@ -1,19 +1,13 @@
 package message
 
-import (
-	"bittorrent-go/util"
-)
-
 type Directive struct {
-	Address   string
-	MessageID MsgID
-	Message   Message
+	Address string
+	Message Message
 }
 
-func NewDirective(message Message, address *util.Address) *Directive {
+func NewDirective(message Message, address string) *Directive {
 	return &Directive{
-		Address:   address.String(),
-		MessageID: message.GetMessageID(),
-		Message:   message,
+		Address: address,
+		Message: message,
 	}
 }

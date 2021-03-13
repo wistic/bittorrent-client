@@ -12,9 +12,9 @@ import (
 const protocolIdentifier = "BitTorrent protocol"
 
 type Peer struct {
-	Connection     net.Conn
-	PeerID         util.PeerID
-	ConnectionInfo string
+	Connection net.Conn
+	PeerID     util.PeerID
+	Address    string
 }
 
 func AttemptConnection(address string, peerID *util.PeerID, infoHash *util.Hash) (*Peer, error) {
@@ -42,19 +42,9 @@ func AttemptConnection(address string, peerID *util.PeerID, infoHash *util.Hash)
 		return nil, errors.New("bad handshake")
 	}
 	peer := Peer{
-		Connection:     connection,
-		PeerID:         receivedHandshake.PeerID,
-		ConnectionInfo: address,
+		Connection: connection,
+		PeerID:     receivedHandshake.PeerID,
+		Address:    address,
 	}
 	return &peer, nil
-}
-
-func (peer *Peer) Send(data message.Message) error {
-	err := message.SendMessage(data, peer.Connection)
-	return err
-}
-
-func (peer *Peer) Receive() (message.Message, error) {
-	data, err := message.ReceiveMessage(peer.Connection)
-	return data, err
 }

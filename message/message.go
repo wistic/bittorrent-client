@@ -3,6 +3,7 @@ package message
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 )
 
@@ -32,8 +33,6 @@ const (
 	MsgPiece MsgID = 7
 	// MsgCancel cancels a request
 	MsgCancel MsgID = 8
-	// MsgDone is a message to the goroutine to close the connection
-	MsgDone MsgID = 69
 )
 
 func SendMessage(message Message, writer io.Writer) error {
@@ -78,6 +77,8 @@ func ReceiveMessage(reader io.Reader) (Message, error) {
 	if err != nil {
 		return nil, err
 	} else if n != int(length) {
+		fmt.Println("got", n, "expected", length)
+		fmt.Println("received data", packet)
 		return nil, errors.New("packet payload corrupt")
 	}
 	switch MsgID(packet[0]) {
