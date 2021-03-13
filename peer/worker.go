@@ -3,7 +3,6 @@ package peer
 import (
 	"bittorrent-go/util"
 	"fmt"
-	"github.com/kr/pretty"
 )
 
 func StartWorker(address *util.Address, peerID *util.PeerID, infoHash *util.Hash) {
@@ -13,6 +12,5 @@ func StartWorker(address *util.Address, peerID *util.PeerID, infoHash *util.Hash
 		return
 	}
 	defer peer.Connection.Close()
-	pretty.Println(peer)
 	fmt.Println("Connected to", address.String())
 }

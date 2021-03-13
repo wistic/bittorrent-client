@@ -24,7 +24,7 @@ func ConnectUDP(url string) (net.Conn, uint64, error) {
 	var n, retries int
 	for {
 		retries++
-		// time out for writting packet added
+		// time out for writing packet added
 		conn.SetWriteDeadline(time.Now().Add(15 * time.Second))
 
 		n, err = conn.Write(wbuffer)
@@ -40,7 +40,7 @@ func ConnectUDP(url string) (net.Conn, uint64, error) {
 		n, err = conn.Read(rbuffer)
 		if e, ok := err.(net.Error); ok && e.Timeout() {
 			if retries > 3 {
-				return nil, 0, errors.New("Retries limit reached")
+				return nil, 0, errors.New("retries limit reached")
 			}
 			continue
 		} else if err != nil {
@@ -58,9 +58,9 @@ func ConnectUDP(url string) (net.Conn, uint64, error) {
 	}
 	tid := binary.BigEndian.Uint32(rbuffer[4:])
 	if tid != uint32(0) {
-		return nil, 0, errors.New("Transaction Id donot match")
+		return nil, 0, errors.New("transaction Id don't match")
 	}
-	connectionid := binary.BigEndian.Uint64(rbuffer[8:])
+	connectionID := binary.BigEndian.Uint64(rbuffer[8:])
 
-	return conn, connectionid, nil
+	return conn, connectionID, nil
 }

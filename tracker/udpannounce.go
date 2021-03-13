@@ -59,7 +59,7 @@ func AnnounceUDP(infohash *util.Hash, peerId *util.PeerID, port uint16, conn net
 		n, err = conn.Read(buffer)
 		if e, ok := err.(net.Error); ok && e.Timeout() {
 			if retries > 3 {
-				return nil, errors.New("Retries limit reached")
+				return nil, errors.New("retries limit reached")
 			}
 			continue
 		} else if err != nil {
@@ -77,7 +77,7 @@ func AnnounceUDP(infohash *util.Hash, peerId *util.PeerID, port uint16, conn net
 	}
 	tid := binary.BigEndian.Uint32(buffer[4:])
 	if tid != uint32(0) {
-		return nil, errors.New("Transaction Id donot match")
+		return nil, errors.New("transaction Id don't match")
 	}
 
 	leechers := binary.BigEndian.Uint32(buffer[12:])
@@ -135,5 +135,5 @@ func AnnounceUDP(infohash *util.Hash, peerId *util.PeerID, port uint16, conn net
 		peer[i].Port = binary.BigEndian.Uint16(buf[offset+4:])
 	}
 
-	return &Response{uint64(interval), peer}, nil // returns AnnounceRsponse Struct and Peer info
+	return &Response{uint64(interval), peer}, nil // returns AnnounceResponse Struct and Peer info
 }
