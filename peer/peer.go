@@ -14,11 +14,11 @@ const protocolIdentifier = "BitTorrent protocol"
 type Peer struct {
 	Connection     net.Conn
 	PeerID         util.PeerID
-	ConnectionInfo *util.Address
+	ConnectionInfo string
 }
 
-func AttemptConnection(address *util.Address, peerID *util.PeerID, infoHash *util.Hash) (*Peer, error) {
-	connection, err := net.DialTimeout("tcp", address.String(), 6*time.Second)
+func AttemptConnection(address string, peerID *util.PeerID, infoHash *util.Hash) (*Peer, error) {
+	connection, err := net.DialTimeout("tcp", address, 6*time.Second)
 	if err != nil {
 		return nil, err
 	}

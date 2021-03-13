@@ -8,7 +8,6 @@ import (
 	"bittorrent-go/util"
 	"fmt"
 	"io/ioutil"
-	"time"
 )
 
 func main() {
@@ -35,8 +34,6 @@ func main() {
 
 	response := <-trackerChannel.Response
 
-	peer.StartWorker(&response.Peers[0], peerID, &tor.InfoHash)
-	time.Sleep(time.Second * 3)
+	peer.StartSender(response.Peers[0].String(), *peerID, tor.InfoHash)
 	close(trackerChannel.Done)
-	time.Sleep(time.Second * 2)
 }

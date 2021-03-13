@@ -32,6 +32,8 @@ const (
 	MsgPiece MsgID = 7
 	// MsgCancel cancels a request
 	MsgCancel MsgID = 8
+	// MsgDone is a message to the goroutine to close the connection
+	MsgDone MsgID = 69
 )
 
 func SendMessage(message Message, writer io.Writer) error {

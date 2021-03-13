@@ -5,14 +5,14 @@ import (
 )
 
 type Directive struct {
-	Address   *util.Address
+	Address   string
 	MessageID MsgID
 	Message   Message
 }
 
 func NewDirective(message Message, address *util.Address) *Directive {
 	return &Directive{
-		Address:   address,
+		Address:   address.String(),
 		MessageID: message.GetMessageID(),
 		Message:   message,
 	}

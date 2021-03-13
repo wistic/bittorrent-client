@@ -12,13 +12,14 @@ type PeerData struct {
 	PeerChoking    bool
 	PeerInterested bool
 	BitField       util.BitField
-	ConnectionInfo *util.Address
 }
+
+// TODO: Add piece progress measure
 
 type Database struct {
 	Interval   uint64
 	Torrent    *torrent.Torrent
-	Peers      []PeerData
+	Peers      map[string]PeerData
 	MyPeerID   util.PeerID
 	MyBitField util.BitField
 	Port       uint16
@@ -31,15 +32,14 @@ func (database *Database) fill(response *tracker.Response, torrent *torrent.Torr
 	database.MyPeerID = peerID
 	database.MyBitField = util.BitField{}
 	database.OutputPath = path
-	peerArray := make([]PeerData, len(response.Peers))
-	for i, v := range response.Peers {
-		peerArray[i] = PeerData{
+	peerArray := make(map[string]PeerData)
+	for _, v := range response.Peers {
+		peerArray[v.String()] = PeerData{
 			AmChoking:      true,
 			AmInterested:   false,
 			PeerChoking:    true,
 			PeerInterested: false,
 			BitField:       util.BitField{},
-			ConnectionInfo: &v,
 		}
 	}
 }
