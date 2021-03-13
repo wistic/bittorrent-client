@@ -29,7 +29,7 @@ func RoutineHTTP(torrent *torrent.Torrent, peerID *util.PeerID, port uint16, cha
 			close(channel.Response)
 			close(channel.Error)
 			return
-		case <-time.After(time.Duration(2) * time.Second): //TODO: Replace duration
+		case <-time.After(time.Duration(response.Interval) * time.Second):
 			continue
 		}
 	}
@@ -62,7 +62,7 @@ func RoutineUDP(torrent *torrent.Torrent, peerID *util.PeerID, port uint16, chan
 			close(channel.Response)
 			close(channel.Error)
 			return
-		case <-time.After(time.Duration(2) * time.Second): //TODO: Replace duration
+		case <-time.After(time.Duration(response.Interval) * time.Second):
 			continue
 		}
 	}

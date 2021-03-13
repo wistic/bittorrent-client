@@ -36,7 +36,7 @@ func main() {
 	response := <-trackerChannel.Response
 
 	peer.StartWorker(&response.Peers[0], peerID, &tor.InfoHash)
-	time.Sleep(time.Second * 6)
+	time.Sleep(time.Second * 3)
 	close(trackerChannel.Done)
-	time.Sleep(time.Second * 6)
+	time.Sleep(time.Second * 2)
 }
