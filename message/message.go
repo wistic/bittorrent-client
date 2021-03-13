@@ -62,7 +62,7 @@ func SendMessage(message Message, writer io.Writer) error {
 
 func ReceiveMessage(reader io.Reader) (Message, error) {
 	lengthBuff := make([]byte, 4)
-	n, err := reader.Read(lengthBuff)
+	n, err := io.ReadFull(reader, lengthBuff)
 	if err != nil {
 		return nil, err
 	} else if n != 4 {
@@ -73,12 +73,10 @@ func ReceiveMessage(reader io.Reader) (Message, error) {
 		return nil, nil // keep-alive
 	}
 	packet := make([]byte, length)
-	n, err = reader.Read(packet)
+	n, err = io.ReadFull(reader, packet)
 	if err != nil {
 		return nil, err
 	} else if n != int(length) {
-		fmt.Println("got", n, "expected", length)
-		fmt.Println("received data", packet)
 		return nil, errors.New("packet payload corrupt")
 	}
 	switch MsgID(packet[0]) {
@@ -107,6 +105,7 @@ func ReceiveMessage(reader io.Reader) (Message, error) {
 		cancel.Deserialize(packet[1:])
 		return &cancel, nil
 	default:
+		fmt.Println(packet[0])
 		return nil, errors.New("unexpected message type")
 	}
 }

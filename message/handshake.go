@@ -36,7 +36,7 @@ func WriteHandshake(handshake *Handshake, writer io.Writer) error {
 
 func ReadHandshake(reader io.Reader) (*Handshake, error) {
 	lengthBuff := make([]byte, 1)
-	n, err := reader.Read(lengthBuff)
+	n, err := io.ReadFull(reader, lengthBuff)
 	if err != nil {
 		return nil, err
 	} else if n != 1 {
@@ -51,7 +51,7 @@ func ReadHandshake(reader io.Reader) (*Handshake, error) {
 	}
 	payloadLength := protocolLength + len(extension.Slice()) + len(infoHash.Slice()) + len(peerID.Slice())
 	buff := make([]byte, payloadLength)
-	n, err = reader.Read(buff)
+	n, err = io.ReadFull(reader, buff)
 	if err != nil {
 		return nil, err
 	} else if n != payloadLength {
