@@ -5,6 +5,7 @@ import (
 	"bittorrent-go/util"
 	"fmt"
 	"github.com/kr/pretty"
+	"net"
 )
 
 type Channel struct {
@@ -44,6 +45,20 @@ func StartSender(address string, peerID util.PeerID, infoHash util.Hash, channel
 		if err != nil {
 			channel.Sender.Error <- &message.ErrorMessage{Address: address, Value: err}
 			return
+		}
+	}
+}
+
+func SendRoutine(connection net.Conn, messageChannel chan message.Message, errorChannel chan error) {
+	for {
+		packet, ok := <-messageChannel
+		pretty.Println(packet)
+		if !ok {
+			return
+		}
+		err := message.SendMessage(packet, connection)
+		if err != nil {
+			errorChannel <- err
 		}
 	}
 }

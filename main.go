@@ -2,13 +2,12 @@ package main
 
 import (
 	"bittorrent-go/cli"
-	"bittorrent-go/message"
 	"bittorrent-go/peer"
+	"bittorrent-go/scheduler"
 	"bittorrent-go/torrent"
 	"bittorrent-go/tracker"
 	"bittorrent-go/util"
 	"fmt"
-	"github.com/kr/pretty"
 	"io/ioutil"
 	"time"
 )
@@ -36,32 +35,34 @@ func main() {
 	trackerChannel := tracker.StartTrackerRoutine(tor, peerID, 9969)
 
 	response := <-trackerChannel.Response
-	errorChannel := make(chan *message.ErrorMessage, 10)
-	receiver := make(chan *message.Directive, 10)
-	sender := make(chan *message.Directive, 10)
-	channel := peer.Channel{
-		Sender:   peer.SenderChannel{Data: sender, Error: errorChannel},
-		Receiver: peer.ReceiverChannel{Data: receiver, Error: errorChannel},
-	}
-	go peer.StartSender(response.Peers[0].String(), *peerID, tor.InfoHash, channel)
-	sender <- message.NewDirective(&message.Interested{}, response.Peers[0].String())
-	counter := 0
-	for {
-		select {
-		case a := <-receiver:
-			pretty.Println(a.Message)
-		case <-time.After(time.Duration(5) * time.Second):
-			mess := message.Request{
-				Index:  0,
-				Begin:  uint32(counter * 16384),
-				Length: 16384,
-			}
-			sender <- message.NewDirective(&mess, response.Peers[0].String())
-			counter++
-		case b := <-errorChannel:
-			fmt.Println("error", b.Value, "from", b.Address)
-			return
-		}
-	}
-
+	//errorChannel := make(chan *message.ErrorMessage, 10)
+	//receiver := make(chan *message.Directive, 10)
+	//sender := make(chan *message.Directive, 10)
+	//channel := peer.Channel{
+	//	Sender:   peer.SenderChannel{Data: sender, Error: errorChannel},
+	//	Receiver: peer.ReceiverChannel{Data: receiver, Error: errorChannel},
+	//}
+	//go peer.StartSender(response.Peers[0].String(), *peerID, tor.InfoHash, channel)
+	//sender <- message.NewDirective(&message.Interested{}, response.Peers[0].String())
+	//counter := 0
+	//for {
+	//	select {
+	//	case a := <-receiver:
+	//		pretty.Println(a.Message)
+	//	case <-time.After(time.Duration(5) * time.Second):
+	//		mess := message.Request{
+	//			Index:  0,
+	//			Begin:  uint32(counter * 16384),
+	//			Length: 16384,
+	//		}
+	//		sender <- message.NewDirective(&mess, response.Peers[0].String())
+	//		counter++
+	//	case b := <-errorChannel:
+	//		fmt.Println("error", b.Value, "from", b.Address)
+	//		return
+	//	}
+	//}
+	sch := scheduler.Scheduler{}
+	go peer.PeerRoutine(&response.Peers[0], peerID, &tor.InfoHash, &sch)
+	time.Sleep(time.Second * 60)
 }
