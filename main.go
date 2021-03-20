@@ -2,6 +2,7 @@ package main
 
 import (
 	"bittorrent-go/cli"
+	"bittorrent-go/filesystem"
 	"bittorrent-go/peer"
 	"bittorrent-go/scheduler"
 	"bittorrent-go/torrent"
@@ -62,7 +63,19 @@ func main() {
 	//		return
 	//	}
 	//}
+	_, writerFinishChannel, writerErrorChannel, writerDoneChannel := filesystem.StartWriter(tor, args.Output)
 	sch := scheduler.Scheduler{}
 	go peer.PeerRoutine(&response.Peers[0], peerID, &tor.InfoHash, &sch)
-	time.Sleep(time.Second * 60)
+	for {
+		select {
+		case <-time.After(time.Second * 60):
+			filesystem.StopWriter(writerDoneChannel)
+			return
+		case pieceIndex := <-writerFinishChannel:
+			fmt.Println("finish writing piece: ", pieceIndex)
+		case err := <-writerErrorChannel:
+			fmt.Println("writer error: ", err)
+
+		}
+	}
 }
