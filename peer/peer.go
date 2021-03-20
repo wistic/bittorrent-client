@@ -77,47 +77,50 @@ func HandshakeRoutine(connection net.Conn, handshake *message.Handshake) error {
 }
 
 func PeerRoutine(address *util.Address, peerID *util.PeerID, infoHash *util.Hash, scheduler *scheduler.Scheduler) {
-	fmt.Println("start worker")
-	defer fmt.Println("end worker")
+	fmt.Println("[worker ", address.String(), "] ", "routine started")
+	defer fmt.Println("[worker ", address.String(), "] ", "routine finished")
+
 	connection, err := net.DialTimeout("tcp", address.String(), 6*time.Second)
 	if err != nil {
-		fmt.Println("timeout set", err)
+		fmt.Println("[worker ", address.String(), "] ", "connection error: ", err)
 		return
 	}
+	fmt.Println("[worker ", address.String(), "] ", "connection established")
 
 	err = HandshakeRoutine(connection, &message.Handshake{Protocol: protocolIdentifier, InfoHash: *infoHash, PeerID: *peerID, Extension: util.Extension{}})
 	if err != nil {
-		fmt.Println("handshake ", err)
+		fmt.Println("[worker ", address.String(), "] ", "handshake error: ", err)
 		return
 	}
-	fmt.Println("handshake done")
+	fmt.Println("[worker ", address.String(), "] ", "handshake done")
 
 	messageChannel := make(chan message.Message, 10)
 	errorChannel := make(chan error, 10)
-	go ReceiverCoroutine(connection, messageChannel, errorChannel)
+	go ReceiverCoroutine(address, connection, messageChannel, errorChannel)
 	for {
 		piece, _ := scheduler.GetPiece(address)
 		counter := 0
-		fmt.Println("piece assigned: ", piece)
+		fmt.Println("[worker ", address.String(), "] ", "piece assigned: ", piece)
+
 		for {
 			select {
 			case msg, ok := <-messageChannel:
 				if ok {
 					switch v := msg.(type) {
 					case *message.Piece:
-						fmt.Println("message channel receive: Piece:", v.Index, " Begin:", v.Begin, " Length:", len(v.Block))
+						fmt.Println("[worker ", address.String(), "] ", "message received: piece: ", v.Index, " begin: ", v.Begin, " length: ", len(v.Block))
 					default:
-						pretty.Println("message channel receive:", v)
+						pretty.Println("[worker ", address.String(), "] ", "message received:", v)
 					}
 				} else {
-					fmt.Println("message channel closed")
+					fmt.Println("[worker ", address.String(), "] ", "message channel closed")
 					return
 				}
 			case err, ok := <-errorChannel:
 				if ok {
-					pretty.Println("error channel received: ", err)
+					fmt.Println("[worker ", address.String(), "] ", "error received: ", err)
 				} else {
-					fmt.Println("error channel closed")
+					fmt.Println("[worker ", address.String(), "] ", "error channel closed")
 				}
 			case <-time.After(time.Duration(5) * time.Second):
 				mess := message.Request{
@@ -126,9 +129,9 @@ func PeerRoutine(address *util.Address, peerID *util.PeerID, infoHash *util.Hash
 					Length: 16384,
 				}
 				err := message.SendMessage(&mess, connection)
-				pretty.Println("message sent:", mess)
+				pretty.Println("[worker ", address.String(), "] ", "sending message: ", mess)
 				if err != nil {
-					fmt.Println("message sending error :", err)
+					fmt.Println("[worker ", address.String(), "] ", "message sending error: ", err)
 				}
 				counter++
 			}

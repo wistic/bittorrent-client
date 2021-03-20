@@ -2,6 +2,7 @@ package peer
 
 import (
 	"bittorrent-go/message"
+	"bittorrent-go/util"
 	"fmt"
 	"net"
 	"time"
@@ -18,22 +19,22 @@ func StartReceiver(connection net.Conn, address string, channel ReceiverChannel)
 	}
 }
 
-func ReceiverCoroutine(connection net.Conn, messageChannel chan message.Message, errorChannel chan error) {
-	fmt.Println("start receive coroutine")
-	defer fmt.Println("stop receive coroutine")
+func ReceiverCoroutine(address *util.Address, connection net.Conn, messageChannel chan message.Message, errorChannel chan error) {
+	fmt.Println("[receiver ", address.String(), "] ", "routine started")
+	defer fmt.Println("[receiver ", address.String(), "] ", "routine finished")
 	defer close(messageChannel)
 	defer close(errorChannel)
 	for {
 		err := connection.SetDeadline(time.Now().Add(10 * time.Second))
 		if err != nil {
-			fmt.Println("receiver coroutine error (deadline): ", err)
+			fmt.Println("[receiver ", address.String(), "] ", "deadline error: ", err)
 			errorChannel <- err
 			return
 		}
 
 		packet, err := message.ReceiveMessage(connection)
 		if err != nil {
-			fmt.Println("receiver coroutine error (reading) ", err)
+			fmt.Println("[receiver ", address.String(), "] ", "parsing error: ", err)
 			errorChannel <- err
 			return
 		}

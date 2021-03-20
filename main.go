@@ -16,19 +16,21 @@ import (
 func main() {
 	args, err := cli.Parse()
 	if err != nil {
-		fmt.Println("Argument parsing error: ", err)
-		fmt.Println("Usage: bittorrent-go -o <path-to-download-directory> <path-to-torrent-file> ")
+		fmt.Println("[cli] argument parsing error: ", err)
+		fmt.Println("[cli] usage: bittorrent-go -o <path-to-download-directory> <path-to-torrent-file> ")
 		return
 	}
 
 	content, err := ioutil.ReadFile(args.Torrent)
 	if err != nil {
-		fmt.Println("File reading error: ", err)
+		fmt.Println("[io] file reading error: ", err)
 		return
 	}
+
 	tor, err := torrent.Parse(content)
 	if err != nil {
-		fmt.Println("Torrent parsing error: ", err)
+		fmt.Println("[parser] torrent parsing error: ", err)
+		return
 	}
 
 	peerID := util.GeneratePeerID()
@@ -75,7 +77,6 @@ func main() {
 			fmt.Println("finish writing piece: ", pieceIndex)
 		case err := <-writerErrorChannel:
 			fmt.Println("writer error: ", err)
-
 		}
 	}
 }

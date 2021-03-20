@@ -100,8 +100,8 @@ func StopWriter(done chan struct{}) {
 }
 
 func writerRoutine(torrent *torrent.Torrent, output string, blockChannel chan *Block, finishChannel chan int, errorChannel chan error, done chan struct{}) {
-	fmt.Println("opening writer")
-	defer fmt.Println("closing writer")
+	fmt.Println("[writer] routine started")
+	defer fmt.Println("[writer] routine finished")
 	complete := make([]bool, len(torrent.PieceHashes))
 	pieceMap := make(map[int]*Piece)
 
@@ -109,17 +109,19 @@ func writerRoutine(torrent *torrent.Torrent, output string, blockChannel chan *B
 		select {
 		case block := <-blockChannel:
 			if complete[block.PieceIndex] {
-				fmt.Println("piece already completed")
+				fmt.Println("[writer] dropping block: ", block.BlockIndex, " piece: ", block.PieceIndex, " reason: already completed")
 				break
 			}
 			index := block.PieceIndex
 			piece, err := getPiece(torrent, pieceMap, index)
 			if err != nil {
+				fmt.Println("[writer] piece fetch error: ", err)
 				errorChannel <- err
 				break
 			}
 			err = piece.write(block.BlockIndex, block.Data)
 			if err != nil {
+				fmt.Println("[writer] piece write error: ", err)
 				errorChannel <- err
 				break
 			}
@@ -128,6 +130,7 @@ func writerRoutine(torrent *torrent.Torrent, output string, blockChannel chan *B
 				if !hash.Match(&torrent.PieceHashes[index]) {
 					delete(pieceMap, index)
 					errorChannel <- errors.New("piece hash mismatch")
+					fmt.Println("[writer] piece: ", index, " hash mismatched")
 					break
 				}
 				go dumpRoutine(piece, index, path.Join(output, fmt.Sprint(index, ".piece")), finishChannel, errorChannel)
@@ -141,10 +144,12 @@ func writerRoutine(torrent *torrent.Torrent, output string, blockChannel chan *B
 }
 
 func dumpRoutine(piece *Piece, index int, path string, finishChannel chan int, errorChannel chan error) {
-	fmt.Println("writing piece: ", index)
+	fmt.Println("[writer] piece: ", index, " dumping routine started")
+	defer fmt.Println("[writer] piece: ", index, " dumping routine finished")
 	err := ioutil.WriteFile(path, piece.Data, 0)
 	if err != nil {
 		errorChannel <- err
+		defer fmt.Println("[writer] piece: ", index, " dumping error: ", err)
 		return
 	}
 	finishChannel <- index
