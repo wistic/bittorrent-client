@@ -2,10 +2,11 @@ package main
 
 import (
 	"bittorrent-go/cli"
+	"bittorrent-go/job"
+	"bittorrent-go/peer"
 	"bittorrent-go/tracker"
 	"bittorrent-go/util"
 	"context"
-	"github.com/kr/pretty"
 	"sync"
 
 	"bittorrent-go/torrent"
@@ -32,28 +33,21 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	wg := sync.WaitGroup{}
 
-	//jobs := job.CreateJobQueue(tor)
-	//
-	//for j := range jobs {
-	//	fmt.Println(j.Index, j.Length)
-	//}
+	jobs := job.CreateJobQueue(tor)
 
 	peerID := util.GeneratePeerID()
 
 	responses := tracker.StartTrackerRoutine(ctx, &wg, tor, peerID, 9969)
 	response := <-responses
 
-	pretty.Println(response)
-	//
-	//go peer.WorkerRoutine(&response.Peers[0], peerID, &tor.InfoHash, &sch)
-	//for {
-	//	select {
-	//	case <-time.After(time.Second * 60):
-	//		filesystem.StopWriter(writerDoneChannel)
-	//		return
-	//	}
-	//}
+	// Connect to first 40 peers
+	for i := 0; i < len(response.Peers); i += 1 {
+		if i == 40 {
+			break
+		}
+		go peer.WorkerRoutine(ctx, &wg, &response.Peers[i], peerID, &tor.InfoHash, jobs)
+	}
 
-	cancel()
 	wg.Wait()
+	cancel()
 }
