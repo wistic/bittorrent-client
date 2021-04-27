@@ -4,6 +4,7 @@ import (
 	"bittorrent-go/util"
 	"crypto/sha1"
 	"errors"
+	"io/ioutil"
 	"path/filepath"
 
 	"github.com/IncSW/go-bencode"
@@ -159,4 +160,12 @@ func Parse(code []byte) (*Torrent, error) {
 		Name:        string(name),
 	}
 	return &tor, nil
+}
+
+func FromFile(path string) (*Torrent, error) {
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return Parse(content)
 }

@@ -3,18 +3,17 @@ package tracker
 import (
 	"bittorrent-go/torrent"
 	"bittorrent-go/util"
+	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 )
 
-type RoutineChannel struct {
-	Response chan *Response
-	Error    chan error
-	Done     chan struct{}
-}
+func RoutineHTTP(ctx context.Context, wg *sync.WaitGroup, torrent *torrent.Torrent, peerID *util.PeerID, port uint16, channel chan *Response) {
+	wg.Add(1)
+	defer wg.Done()
 
-func RoutineHTTP(torrent *torrent.Torrent, peerID *util.PeerID, port uint16, channel RoutineChannel) {
 	fmt.Println("[tracker http] routine started")
 	defer fmt.Println("[tracker http] routine finished")
 	for {
@@ -22,16 +21,14 @@ func RoutineHTTP(torrent *torrent.Torrent, peerID *util.PeerID, port uint16, cha
 		response, err := RequestTrackerHTTP(torrent, peerID, port)
 		if err != nil {
 			fmt.Println("[tracker http] request error: ", err)
-			channel.Error <- err
 		} else {
 			fmt.Println("[tracker http] response received: ", response)
-			channel.Response <- response
+			channel <- response
 		}
 
 		select {
-		case <-channel.Done:
-			close(channel.Response)
-			close(channel.Error)
+		case <-ctx.Done():
+			close(channel)
 			return
 		case <-time.After(time.Duration(response.Interval) * time.Second):
 			continue
@@ -39,7 +36,10 @@ func RoutineHTTP(torrent *torrent.Torrent, peerID *util.PeerID, port uint16, cha
 	}
 }
 
-func RoutineUDP(torrent *torrent.Torrent, peerID *util.PeerID, port uint16, channel RoutineChannel) {
+func RoutineUDP(ctx context.Context, wg *sync.WaitGroup, torrent *torrent.Torrent, peerID *util.PeerID, port uint16, channel chan *Response) {
+	wg.Add(1)
+	defer wg.Done()
+
 	fmt.Println("[tracker udp] routine started")
 	defer fmt.Println("[tracker udp] routine finished")
 
@@ -47,9 +47,7 @@ func RoutineUDP(torrent *torrent.Torrent, peerID *util.PeerID, port uint16, chan
 	conn, id, err := ConnectUDP(url)
 	if err != nil {
 		fmt.Println("[tracker udp] connection error: ", err)
-		channel.Error <- err
-		close(channel.Response)
-		close(channel.Error)
+		close(channel)
 		return
 	}
 	fmt.Println("[tracker udp] id received: ", id)
@@ -58,16 +56,14 @@ func RoutineUDP(torrent *torrent.Torrent, peerID *util.PeerID, port uint16, chan
 		response, err := AnnounceUDP(&torrent.InfoHash, peerID, port, conn, id)
 		if err != nil {
 			fmt.Println("[tracker udp] request error: ", err)
-			channel.Error <- err
 		} else {
 			fmt.Println("[tracker udp] response received: ", response)
-			channel.Response <- response
+			channel <- response
 		}
 
 		select {
-		case <-channel.Done:
-			close(channel.Response)
-			close(channel.Error)
+		case <-ctx.Done():
+			close(channel)
 			return
 		case <-time.After(time.Duration(response.Interval) * time.Second):
 			continue
@@ -75,18 +71,14 @@ func RoutineUDP(torrent *torrent.Torrent, peerID *util.PeerID, port uint16, chan
 	}
 }
 
-func StartTrackerRoutine(torrent *torrent.Torrent, peerID *util.PeerID, port uint16) RoutineChannel {
-	channel := RoutineChannel{
-		Response: make(chan *Response, 10),
-		Error:    make(chan error, 10),
-		Done:     make(chan struct{}),
-	}
+func StartTrackerRoutine(ctx context.Context, wg *sync.WaitGroup, torrent *torrent.Torrent, peerID *util.PeerID, port uint16) chan *Response {
+	response := make(chan *Response)
 	url := torrent.Announce
 	if strings.HasPrefix(url, "http://") {
-		go RoutineHTTP(torrent, peerID, port, channel)
+		go RoutineHTTP(ctx, wg, torrent, peerID, port, response)
 	} else {
 		fmt.Print("udp")
-		go RoutineUDP(torrent, peerID, port, channel)
+		go RoutineUDP(ctx, wg, torrent, peerID, port, response)
 	}
-	return channel
+	return response
 }

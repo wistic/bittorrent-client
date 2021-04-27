@@ -2,15 +2,17 @@ package main
 
 import (
 	"bittorrent-go/cli"
-	"bittorrent-go/filesystem"
-	"bittorrent-go/peer"
-	"bittorrent-go/scheduler"
-	"bittorrent-go/torrent"
 	"bittorrent-go/tracker"
 	"bittorrent-go/util"
+	"context"
+	"github.com/kr/pretty"
+	"sync"
+
+	"bittorrent-go/torrent"
+	//"bittorrent-go/tracker"
+	//"bittorrent-go/util"
 	"fmt"
-	"io/ioutil"
-	"time"
+	//"time"
 )
 
 func main() {
@@ -21,62 +23,37 @@ func main() {
 		return
 	}
 
-	content, err := ioutil.ReadFile(args.Torrent)
-	if err != nil {
-		fmt.Println("[io] file reading error: ", err)
-		return
-	}
-
-	tor, err := torrent.Parse(content)
+	tor, err := torrent.FromFile(args.Torrent)
 	if err != nil {
 		fmt.Println("[parser] torrent parsing error: ", err)
 		return
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	wg := sync.WaitGroup{}
+
+	//jobs := job.CreateJobQueue(tor)
+	//
+	//for j := range jobs {
+	//	fmt.Println(j.Index, j.Length)
+	//}
+
 	peerID := util.GeneratePeerID()
 
-	trackerChannel := tracker.StartTrackerRoutine(tor, peerID, 9969)
+	responses := tracker.StartTrackerRoutine(ctx, &wg, tor, peerID, 9969)
+	response := <-responses
 
-	response := <-trackerChannel.Response
-	//errorChannel := make(chan *message.ErrorMessage, 10)
-	//receiver := make(chan *message.Directive, 10)
-	//sender := make(chan *message.Directive, 10)
-	//channel := peer.Channel{
-	//	Sender:   peer.SenderChannel{Data: sender, Error: errorChannel},
-	//	Receiver: peer.ReceiverChannel{Data: receiver, Error: errorChannel},
-	//}
-	//go peer.StartSender(response.Peers[0].String(), *peerID, tor.InfoHash, channel)
-	//sender <- message.NewDirective(&message.Interested{}, response.Peers[0].String())
-	//counter := 0
+	pretty.Println(response)
+	//
+	//go peer.WorkerRoutine(&response.Peers[0], peerID, &tor.InfoHash, &sch)
 	//for {
 	//	select {
-	//	case a := <-receiver:
-	//		pretty.Println(a.Message)
-	//	case <-time.After(time.Duration(5) * time.Second):
-	//		mess := message.Request{
-	//			Index:  0,
-	//			Begin:  uint32(counter * 16384),
-	//			Length: 16384,
-	//		}
-	//		sender <- message.NewDirective(&mess, response.Peers[0].String())
-	//		counter++
-	//	case b := <-errorChannel:
-	//		fmt.Println("error", b.Value, "from", b.Address)
+	//	case <-time.After(time.Second * 60):
+	//		filesystem.StopWriter(writerDoneChannel)
 	//		return
 	//	}
 	//}
-	_, writerFinishChannel, writerErrorChannel, writerDoneChannel := filesystem.StartWriter(tor, args.Output)
-	sch := scheduler.Scheduler{}
-	go peer.PeerRoutine(&response.Peers[0], peerID, &tor.InfoHash, &sch)
-	for {
-		select {
-		case <-time.After(time.Second * 60):
-			filesystem.StopWriter(writerDoneChannel)
-			return
-		case pieceIndex := <-writerFinishChannel:
-			fmt.Println("finish writing piece: ", pieceIndex)
-		case err := <-writerErrorChannel:
-			fmt.Println("writer error: ", err)
-		}
-	}
+
+	cancel()
+	wg.Wait()
 }
