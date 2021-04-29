@@ -1,7 +1,6 @@
 package peer
 
 import (
-	"bittorrent-go/filesystem"
 	"bittorrent-go/job"
 	"bittorrent-go/message"
 	"bittorrent-go/util"
@@ -68,11 +67,17 @@ func BitfieldRoutine(connection net.Conn) (*util.BitField, error) {
 	return &field, nil
 }
 
-const BLOCK_SIZE uint32 = 16 * 1024
+const BlockSize uint32 = 16 * 1024
 
-func WorkerRoutine(ctx context.Context, wg *sync.WaitGroup, address *util.Address, peerID *util.PeerID, infoHash *util.Hash, jobs chan *job.Job) {
+func Disconnect(address *util.Address, disconnect chan *util.Address) {
+	disconnect <- address
+}
+
+func WorkerRoutine(ctx context.Context, wg *sync.WaitGroup, address *util.Address, peerID *util.PeerID, infoHash *util.Hash, jobs chan *job.Job, results chan *job.Result, disconnect chan *util.Address) {
 	wg.Add(1)
 	defer wg.Done()
+
+	defer Disconnect(address, disconnect)
 
 	fmt.Println("[worker ", address.String(), "] ", "routine started")
 	defer fmt.Println("[worker ", address.String(), "] ", "routine finished")
@@ -124,33 +129,33 @@ func WorkerRoutine(ctx context.Context, wg *sync.WaitGroup, address *util.Addres
 
 	for {
 		select {
-		case job := <-jobs:
-			ok, err := bitfield.CheckPiece(int(job.Index))
+		case j := <-jobs:
+			ok, err := bitfield.CheckPiece(int(j.Index))
 			if err != nil || !ok {
-				jobs <- job
+				jobs <- j
 				continue
 			}
 
-			fmt.Println("[worker ", address.String(), "] ", "job picked ", job.Index)
+			fmt.Println("[worker ", address.String(), "] ", "job picked ", j.Index)
 
-			data := make([]byte, job.Length)
+			data := make([]byte, j.Length)
 			downloaded := uint32(0)
 			requested := uint32(0)
-			for downloaded < job.Length {
+			for downloaded < j.Length {
 				if !choke {
-					for requested < downloaded+BLOCK_SIZE*3 && requested < job.Length {
-						blockSize := job.Length - requested
-						if blockSize > BLOCK_SIZE {
-							blockSize = BLOCK_SIZE
+					for requested < downloaded+BlockSize*3 && requested < j.Length {
+						blockSize := j.Length - requested
+						if blockSize > BlockSize {
+							blockSize = BlockSize
 						}
 						req := message.Request{
-							Index:  job.Index,
+							Index:  j.Index,
 							Begin:  requested,
 							Length: blockSize,
 						}
 						err := message.SendMessage(&req, connection)
 						if err != nil {
-							jobs <- job
+							jobs <- j
 							fmt.Println("[worker ", address.String(), "] ", "send message error ", err)
 							return
 						}
@@ -161,7 +166,7 @@ func WorkerRoutine(ctx context.Context, wg *sync.WaitGroup, address *util.Addres
 				select {
 				case msg, ok := <-messageChannel:
 					if !ok || msg == nil {
-						jobs <- job
+						jobs <- j
 						fmt.Println("[worker ", address.String(), "] ", "message channel closed")
 						return
 					}
@@ -182,7 +187,7 @@ func WorkerRoutine(ctx context.Context, wg *sync.WaitGroup, address *util.Addres
 						copy(data[piece.Begin:], piece.Block)
 					}
 				case <-ctx.Done():
-					jobs <- job
+					jobs <- j
 					fmt.Println("[worker ", address.String(), "] ", "context closed")
 					return
 				default:
@@ -194,48 +199,25 @@ func WorkerRoutine(ctx context.Context, wg *sync.WaitGroup, address *util.Addres
 				Value: sha1.Sum(data),
 			}
 
-			fmt.Println("[worker ", address.String(), "] ", "job done: ", job.Index, "hash: ", hash, "match: ", hash.Match(&job.Hash))
+			if !hash.Match(&j.Hash) {
+				jobs <- j
+				continue
+			}
 
-			go filesystem.WriteRoutine(wg, job.Index, data)
+			fmt.Println("[worker ", address.String(), "] ", "job done: ", j.Index, "hash: ", hash, "match: ", hash.Match(&j.Hash))
 
+			//go filesystem.WriteRoutine(wg, j.Index, data)
+			results <- &job.Result{
+				Index: j.Index,
+				Data:  data,
+			}
 			continue
 		case <-ctx.Done():
 			return
 		}
 	}
+}
 
-	//for {
-	//	piece, _ := scheduler.GetPiece(address)
-	//	counter := 0
-	//	fmt.Println("[worker ", address.String(), "] ", "piece assigned: ", piece)
-	//
-	//	for {
-	//		select {
-	//		case msg, ok := <-messageChannel:
-	//			if ok {
-	//				switch v := msg.(type) {
-	//				case *message.Job:
-	//					fmt.Println("[worker ", address.String(), "] ", "message received: piece: ", v.Index, " begin: ", v.Begin, " length: ", len(v.Block))
-	//				default:
-	//					pretty.Println("[worker ", address.String(), "] ", "message received:", v)
-	//				}
-	//			} else {
-	//				fmt.Println("[worker ", address.String(), "] ", "message channel closed")
-	//				return
-	//			}
-	//		case <-time.After(time.Duration(5) * time.Second):
-	//			mess := message.Request{
-	//				Index:  piece,
-	//				Begin:  uint32(counter * 16384),
-	//				Length: 16384,
-	//			}
-	//			err := message.SendMessage(&mess, connection)
-	//			pretty.Println("[worker ", address.String(), "] ", "sending message: ", mess)
-	//			if err != nil {
-	//				fmt.Println("[worker ", address.String(), "] ", "message sending error: ", err)
-	//			}
-	//			counter++
-	//		}
-	//	}
-	//}
+func CreateDisconnectChannel() chan *util.Address {
+	return make(chan *util.Address)
 }

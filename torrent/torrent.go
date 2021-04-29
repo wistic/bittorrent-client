@@ -63,7 +63,11 @@ func infoHash(info interface{}) (*util.Hash, error) {
 // parseFilePaths parses the file paths from files field in the infoMap
 func parseFilePaths(infoMap map[string]interface{}) ([]File, error) {
 	if length, ok := infoMap["length"].(int64); ok {
-		return []File{{"", length}}, nil
+		name, ok := infoMap["name"].([]byte)
+		if !ok {
+			return nil, errors.New("torrent name is missing")
+		}
+		return []File{{string(name), length}}, nil
 	}
 
 	if fileArray, ok := infoMap["files"].([]interface{}); ok {

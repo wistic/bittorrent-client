@@ -30,7 +30,7 @@ func ReceiverRoutine(ctx context.Context, wg *sync.WaitGroup, address *util.Addr
 		packet, err := message.ReceiveMessage(connection)
 		if err != nil {
 			fmt.Println("[receiver ", address.String(), "] ", "parsing error: ", err)
-			if !os.IsTimeout(err) {
+			if os.IsTimeout(err) {
 				continue
 			}
 			return

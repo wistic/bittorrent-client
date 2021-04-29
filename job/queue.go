@@ -4,7 +4,7 @@ import (
 	"bittorrent-go/torrent"
 )
 
-func CreateJobQueue(tor *torrent.Torrent) chan *Job {
+func CreateJobChannel(tor *torrent.Torrent) (chan *Job, int) {
 	pieceChan := make(chan *Job, len(tor.PieceHashes))
 	total := tor.Length()
 	for i := 0; i < len(tor.PieceHashes); i += 1 {
@@ -23,5 +23,9 @@ func CreateJobQueue(tor *torrent.Torrent) chan *Job {
 			}
 		}
 	}
-	return pieceChan
+	return pieceChan, len(tor.PieceHashes)
+}
+
+func CreateResultChannel() chan *Result {
+	return make(chan *Result)
 }

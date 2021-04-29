@@ -22,13 +22,14 @@ func AssembleRoutine(tor *torrent.Torrent) error {
 	for _, file := range tor.Files {
 		fmt.Println("creating", file.Path)
 
-		f, err := os.Create(file.Path + "experimental") //TODO: remove experimental
+		f, err := os.Create(file.Path)
 		if err != nil {
 			return err
 		}
 
 		_, err = io.CopyN(f, &reader, file.Length)
 		if err != nil {
+			f.Close()
 			return err
 		}
 
