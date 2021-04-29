@@ -4,15 +4,15 @@ import (
 	"bittorrent-go/message"
 	"bittorrent-go/util"
 	"context"
-	"fmt"
+	"github.com/sirupsen/logrus"
 	"net"
 	"os"
 	"time"
 )
 
 func ReceiverRoutine(ctx context.Context, address *util.Address, connection net.Conn, messageChannel chan message.Message) {
-	fmt.Println("[receiver ", address.String(), "] ", "routine started")
-	defer fmt.Println("[receiver ", address.String(), "] ", "routine finished")
+	logrus.Debugln("receiver", address, "started")
+	defer logrus.Debugln("receiver", address, "ended")
 
 	defer close(messageChannel)
 
@@ -25,20 +25,20 @@ func ReceiverRoutine(ctx context.Context, address *util.Address, connection net.
 
 		err := connection.SetReadDeadline(time.Now().Add(10 * time.Second))
 		if err != nil {
-			fmt.Println("[receiver ", address.String(), "] ", "deadline error: ", err)
+			logrus.Debugln("receiver", address, "deadline error:", err)
 			return
 		}
 
 		packet, err := message.ReceiveMessage(connection)
 		if err != nil {
-			fmt.Println("[receiver ", address.String(), "] ", "parsing error: ", err)
+			logrus.Debugln("receiver", address, "parsing error:", err)
 			if os.IsTimeout(err) {
 				continue
 			}
 			return
 		}
 
-		fmt.Println("[receiver ", address.String(), "] ", "packet received")
+		logrus.Traceln("receiver", address, "packet received")
 		messageChannel <- packet
 	}
 }

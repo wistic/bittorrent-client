@@ -5,10 +5,11 @@ import (
 	"bittorrent-go/util"
 	"crypto/sha1"
 	"errors"
-	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 )
 
 func AssembleRoutine(tor *torrent.Torrent, outputPath string) error {
@@ -21,16 +22,19 @@ func AssembleRoutine(tor *torrent.Torrent, outputPath string) error {
 	}
 
 	for _, file := range tor.Files {
-		fmt.Println("creating", file.Path)
+		logrus.Infoln("creating:", file.Path)
 
-		f, err := os.Create(file.Path)
+		f, err := os.Create(path.Join(outputPath, file.Path))
 		if err != nil {
 			return err
 		}
 
 		_, err = io.CopyN(f, &reader, file.Length)
 		if err != nil {
-			f.Close()
+			err2 := f.Close()
+			if err2 != nil {
+				return err2
+			}
 			return err
 		}
 
@@ -39,7 +43,7 @@ func AssembleRoutine(tor *torrent.Torrent, outputPath string) error {
 			return err
 		}
 
-		fmt.Println("created", file.Path)
+		logrus.Infoln("finished:", file.Path)
 	}
 
 	return nil
@@ -55,15 +59,17 @@ type SerialReader struct {
 
 func (sr *SerialReader) Read(p []byte) (n int, err error) {
 	if sr.current == nil || sr.offset >= len(sr.current) {
-		fmt.Println("reading", sr.index)
+		logrus.Debugln("reading:", sr.index)
 
 		sr.current, err = ioutil.ReadFile(fileName(sr.index, sr.outputPath))
 		if err != nil {
+			logrus.Errorln("file read error:", err)
 			return 0, err
 		}
 		hash := util.Hash{Value: sha1.Sum(sr.current)}
 
 		if !hash.Match(&sr.torrent.PieceHashes[sr.index]) {
+			logrus.Errorln("hash mismatch")
 			return 0, errors.New("hash mismatch")
 		}
 

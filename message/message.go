@@ -3,7 +3,6 @@ package message
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 )
 
@@ -105,7 +104,6 @@ func ReceiveMessage(reader io.Reader) (Message, error) {
 		cancel.Deserialize(packet[1:])
 		return &cancel, nil
 	default:
-		fmt.Println(packet[0])
 		return nil, errors.New("unexpected message type")
 	}
 }

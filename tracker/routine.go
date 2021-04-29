@@ -5,6 +5,7 @@ import (
 	"bittorrent-go/util"
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
 	"time"
@@ -14,16 +15,17 @@ func RoutineHTTP(ctx context.Context, wg *sync.WaitGroup, torrent *torrent.Torre
 	wg.Add(1)
 	defer wg.Done()
 
-	fmt.Println("[tracker http] routine started")
-	defer fmt.Println("[tracker http] routine finished")
+	logrus.Debugln("tracker started")
+	defer logrus.Debugln("tracker finished")
 
 	for {
-		fmt.Println("[tracker http] requesting")
+		logrus.Debugln("tracker requesting")
 		response, err := RequestTrackerHTTP(torrent, peerID, port)
 		if err != nil {
-			fmt.Println("[tracker http] request error: ", err)
+			logrus.Debugln("tracker request error")
+
 		} else {
-			fmt.Println("[tracker http] response received: ", response)
+			logrus.Debugln("tracker response received")
 			channel <- response
 		}
 
@@ -41,24 +43,27 @@ func RoutineUDP(ctx context.Context, wg *sync.WaitGroup, torrent *torrent.Torren
 	wg.Add(1)
 	defer wg.Done()
 
-	fmt.Println("[tracker udp] routine started")
-	defer fmt.Println("[tracker udp] routine finished")
+	logrus.Debugln("tracker started")
+	defer logrus.Debugln("tracker finished")
 
 	url := strings.TrimPrefix(torrent.Announce, "udp://")
 	conn, id, err := ConnectUDP(url)
 	if err != nil {
-		fmt.Println("[tracker udp] connection error: ", err)
+		logrus.Debugln("tracker udp connection error")
 		close(channel)
 		return
 	}
-	fmt.Println("[tracker udp] id received: ", id)
+	logrus.Debugln("tracker connection id:", id)
+
 	for {
-		fmt.Println("[tracker udp] requesting")
+		logrus.Debugln("tracker requesting")
+
 		response, err := AnnounceUDP(&torrent.InfoHash, peerID, port, conn, id)
 		if err != nil {
-			fmt.Println("[tracker udp] request error: ", err)
+			logrus.Debugln("tracker request error:", err)
+
 		} else {
-			fmt.Println("[tracker udp] response received: ", response)
+			logrus.Debugln("tracker response received")
 			channel <- response
 		}
 

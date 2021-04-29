@@ -1,7 +1,7 @@
 package filesystem
 
 import (
-	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 	"path"
 	"strconv"
@@ -18,24 +18,24 @@ func WriteRoutine(wg *sync.WaitGroup, index uint32, data []byte, outputPath stri
 
 	file, err := os.Create(fileName(index, outputPath))
 	if err != nil {
-		fmt.Println("[ writer ] ", "file create error: ", err)
+		logrus.Errorln("file create error:", err)
 		return
 	}
 	_, err = file.Write(data)
 	if err != nil {
-		fmt.Println("[ writer ] ", "file write error: ", err)
+		logrus.Errorln("file write error:", err)
 		return
 	}
 
 	err = file.Sync()
 	if err != nil {
-		fmt.Println("[ writer ] ", "file sync error: ", err)
+		logrus.Errorln("file sync error:", err)
 		return
 	}
 
 	err = file.Close()
 	if err != nil {
-		fmt.Println("[ writer ] ", "file close error: ", err)
+		logrus.Errorln("file close error:", err)
 		return
 	}
 

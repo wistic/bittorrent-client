@@ -9,25 +9,22 @@ import (
 	"bittorrent-go/tracker"
 	"bittorrent-go/util"
 	"context"
+	"github.com/sirupsen/logrus"
 	"sync"
-
-	//"bittorrent-go/tracker"
-	//"bittorrent-go/util"
-	"fmt"
-	//"time"
 )
 
 func main() {
 	args, err := cli.Parse()
 	if err != nil {
-		fmt.Println("[cli] argument parsing error: ", err)
-		fmt.Println("[cli] usage: bittorrent-go -o <path-to-download-directory> <path-to-torrent-file> ")
+		logrus.Errorln("argument parsing error:", err)
+		logrus.Infoln("usage: bittorrent-go -o <path-to-download-directory> <path-to-torrent-file>")
 		return
 	}
 
+	logrus.Infoln("reading torrent file")
 	tor, err := torrent.FromFile(args.Torrent)
 	if err != nil {
-		fmt.Println("[parser] torrent parsing error: ", err)
+		logrus.Errorln("torrent parsing error:", err)
 		return
 	}
 
@@ -37,12 +34,11 @@ func main() {
 	jobs, jobCount := job.CreateJobChannel(tor)
 	results := job.CreateResultChannel()
 	disconnect := peer.CreateDisconnectChannel()
-
+	peerScheduler := peer.NewPeerScheduler()
 	peerID := util.GeneratePeerID()
 
+	logrus.Infoln("starting tracker")
 	responses := tracker.StartTrackerRoutine(ctx, &wg, tor, peerID, 9969)
-
-	peerScheduler := peer.NewPeerScheduler()
 
 	for {
 		connectNewPeers := false
@@ -50,10 +46,12 @@ func main() {
 		case response := <-responses:
 			peerScheduler.UpdateList(response.Peers)
 			connectNewPeers = true
+			logrus.Infoln("tracker response received")
 
 		case result := <-results:
 			go filesystem.WriteRoutine(&wg, result.Index, result.Data, args.Output)
 			jobCount -= 1
+			logrus.Infoln("writing piece:", result.Index, "remaining pieces:", jobCount)
 
 		case address := <-disconnect:
 			peerScheduler.RemoveAddress(*address)
@@ -78,11 +76,19 @@ func main() {
 		}
 	}
 
+	logrus.Infoln("all pieces downloaded")
+
 	cancel()
 	wg.Wait()
 
+	logrus.Infoln("assembling files")
 	err = filesystem.AssembleRoutine(tor, args.Output)
 	if err != nil {
-		fmt.Println("[ assembler ]", err)
+		logrus.Errorln("assembling error:", err)
 	}
+
+	logrus.Infoln("deleting downloaded pieces")
+	filesystem.DeleteRoutine(tor, args.Output)
+
+	logrus.Infoln("finished")
 }

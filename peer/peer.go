@@ -8,8 +8,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"errors"
-	"fmt"
-	"github.com/kr/pretty"
+	"github.com/sirupsen/logrus"
 	"net"
 	"time"
 )
@@ -72,35 +71,41 @@ func Disconnect(address *util.Address, disconnect chan *util.Address) {
 	disconnect <- address
 }
 
+func CloseConnection(connection net.Conn) {
+	err := connection.Close()
+	if err != nil {
+		logrus.Debugln("close error:", err)
+	}
+}
+
 func WorkerRoutine(ctx context.Context, address *util.Address, peerID *util.PeerID, infoHash *util.Hash, jobs chan *job.Job, results chan *job.Result, disconnect chan *util.Address) {
 	defer Disconnect(address, disconnect)
 
-	fmt.Println("[worker ", address.String(), "] ", "routine started")
-	defer fmt.Println("[worker ", address.String(), "] ", "routine finished")
+	logrus.Debugln("worker", address, "started")
+	defer logrus.Debugln("worker", address, "finished")
 
 	connection, err := net.DialTimeout("tcp", address.String(), 10*time.Second)
 	if err != nil {
-		fmt.Println("[worker ", address.String(), "] ", "connection error: ", err)
+		logrus.Debugln("worker", address, "dial error:", err)
 		return
 	}
-	defer connection.Close()
+	defer CloseConnection(connection)
 
-	fmt.Println("[worker ", address.String(), "] ", "connection established")
+	logrus.Debugln("worker", address, "connection established")
 
 	err = HandshakeRoutine(connection, peerID, infoHash)
 	if err != nil {
-		fmt.Println("[worker ", address.String(), "] ", "handshake error: ", err)
+		logrus.Debugln("worker", address, "handshake error:", err)
 		return
 	}
-	fmt.Println("[worker ", address.String(), "] ", "handshake done")
+
+	logrus.Debugln("worker", address, "handshake done")
 
 	bitfield, err := BitfieldRoutine(connection)
 	if err != nil {
-		fmt.Println("[worker ", address.String(), "] ", "bitfield error: ", err)
+		logrus.Debugln("worker", address, "bitfield error:", err)
 		return
 	}
-
-	pretty.Println(bitfield)
 
 	messageChannel := make(chan message.Message, 10)
 	go ReceiverRoutine(ctx, address, connection, messageChannel)
@@ -108,109 +113,124 @@ func WorkerRoutine(ctx context.Context, address *util.Address, peerID *util.Peer
 	unchoke := message.Unchoke{}
 	err = message.SendMessage(&unchoke, connection)
 	if err != nil {
-		fmt.Println("[worker ", address.String(), "] ", "unchoke send failed: ", err)
+		logrus.Debugln("worker", address, "unchoke send error:", err)
 		return
 	}
-	fmt.Println("[worker ", address.String(), "] ", "choke done")
+	logrus.Debugln("worker", address, "unchoke done")
 
 	interested := message.Interested{}
 	err = message.SendMessage(&interested, connection)
 	if err != nil {
-		fmt.Println("[worker ", address.String(), "] ", "interested send failed: ", err)
+		logrus.Debugln("worker", address, "interested send error:", err)
 		return
 	}
-	fmt.Println("[worker ", address.String(), "] ", "interested done")
+	logrus.Debugln("worker", address, "interested done")
+
+	logrus.Infoln("peer connected:", address)
+	defer logrus.Infoln("peer disconnected:", address)
 
 	choke := true
 
 	for {
 		select {
 		case j := <-jobs:
-			ok, err := bitfield.CheckPiece(int(j.Index))
-			if err != nil || !ok {
-				jobs <- j
-				continue
-			}
-
-			fmt.Println("[worker ", address.String(), "] ", "job picked ", j.Index)
-
-			data := make([]byte, j.Length)
-			downloaded := uint32(0)
-			requested := uint32(0)
-			for downloaded < j.Length {
-				if !choke {
-					for requested < downloaded+BlockSize*3 && requested < j.Length {
-						blockSize := j.Length - requested
-						if blockSize > BlockSize {
-							blockSize = BlockSize
-						}
-						req := message.Request{
-							Index:  j.Index,
-							Begin:  requested,
-							Length: blockSize,
-						}
-						err := message.SendMessage(&req, connection)
-						if err != nil {
-							jobs <- j
-							fmt.Println("[worker ", address.String(), "] ", "send message error ", err)
-							return
-						}
-						requested += blockSize
-					}
-				}
-
-				select {
-				case msg, ok := <-messageChannel:
-					if !ok || msg == nil {
-						jobs <- j
-						fmt.Println("[worker ", address.String(), "] ", "message channel closed")
-						return
-					}
-					switch msg.GetMessageID() {
-					case message.MsgUnchoke:
-						choke = false
-						fmt.Println("[worker ", address.String(), "] ", "unchoked")
-					case message.MsgChoke:
-						choke = true
-						fmt.Println("[worker ", address.String(), "] ", "choked")
-					case message.MsgHave:
-						have := msg.(*message.Have)
-						bitfield.SetPiece(int(have.Index))
-					case message.MsgPiece:
-						piece := msg.(*message.Piece)
-						end := piece.Begin + uint32(len(piece.Block))
-						if downloaded < end {
-							downloaded = end
-							fmt.Println("[worker ", address.String(), "] ", "downloaded ", downloaded)
-						}
-						copy(data[piece.Begin:], piece.Block)
-					}
-				case <-ctx.Done():
+			{
+				ok, err := bitfield.CheckPiece(int(j.Index))
+				if err != nil || !ok {
 					jobs <- j
-					fmt.Println("[worker ", address.String(), "] ", "context closed")
-					return
-				default:
 					continue
 				}
+
+				logrus.Debugln("worker", address, "job picked:", j.Index)
+
+				data := make([]byte, j.Length)
+				downloaded := uint32(0)
+				requested := uint32(0)
+				for downloaded < j.Length {
+					if !choke {
+						for requested < downloaded+BlockSize*3 && requested < j.Length {
+							blockSize := j.Length - requested
+							if blockSize > BlockSize {
+								blockSize = BlockSize
+							}
+							req := message.Request{
+								Index:  j.Index,
+								Begin:  requested,
+								Length: blockSize,
+							}
+							err := message.SendMessage(&req, connection)
+							if err != nil {
+								jobs <- j
+								logrus.Debugln("worker", address, "request send error:", err)
+								return
+							}
+							requested += blockSize
+						}
+					}
+
+					select {
+					case msg, ok := <-messageChannel:
+						if !ok || msg == nil {
+							jobs <- j
+							logrus.Debugln("worker", address, "message channel closed")
+							return
+						}
+
+						switch msg.GetMessageID() {
+						case message.MsgUnchoke:
+							choke = false
+							logrus.Debugln("worker", address, "unchoked")
+
+						case message.MsgChoke:
+							choke = true
+							logrus.Debugln("worker", address, "choked")
+
+						case message.MsgHave:
+							have := msg.(*message.Have)
+							err := bitfield.SetPiece(int(have.Index))
+							if err != nil {
+								jobs <- j
+								logrus.Debugln("worker", address, "bitfield set error")
+								return
+							}
+
+						case message.MsgPiece:
+							piece := msg.(*message.Piece)
+							end := piece.Begin + uint32(len(piece.Block))
+							if downloaded < end {
+								downloaded = end
+								logrus.Debugln("worker", address, "piece message")
+							}
+							copy(data[piece.Begin:], piece.Block)
+						}
+					case <-ctx.Done():
+						jobs <- j
+						logrus.Debugln("worker", address, "context closed")
+						return
+
+					default:
+						continue
+					}
+				}
+
+				hash := util.Hash{
+					Value: sha1.Sum(data),
+				}
+
+				if !hash.Match(&j.Hash) {
+					jobs <- j
+					logrus.Debugln("worker", address, "hash mismatch")
+					continue
+				}
+
+				logrus.Debugln("worker", address, "job done:", j.Index)
+
+				results <- &job.Result{
+					Index: j.Index,
+					Data:  data,
+				}
 			}
 
-			hash := util.Hash{
-				Value: sha1.Sum(data),
-			}
-
-			if !hash.Match(&j.Hash) {
-				jobs <- j
-				continue
-			}
-
-			fmt.Println("[worker ", address.String(), "] ", "job done: ", j.Index, "hash: ", hash, "match: ", hash.Match(&j.Hash))
-
-			//go filesystem.WriteRoutine(wg, j.Index, data)
-			results <- &job.Result{
-				Index: j.Index,
-				Data:  data,
-			}
-			continue
 		case <-ctx.Done():
 			return
 		}
