@@ -17,7 +17,7 @@ func main() {
 	args, err := cli.Parse()
 	if err != nil {
 		logrus.Errorln("argument parsing error:", err)
-		logrus.Infoln("usage: bittorrent-go -o <path-to-download-directory> <path-to-torrent-file>")
+		logrus.Infoln("usage: bittorrent-go <path-to-torrent-file> <path-to-download-directory>")
 		return
 	}
 
