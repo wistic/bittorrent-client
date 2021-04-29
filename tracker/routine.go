@@ -16,6 +16,7 @@ func RoutineHTTP(ctx context.Context, wg *sync.WaitGroup, torrent *torrent.Torre
 
 	fmt.Println("[tracker http] routine started")
 	defer fmt.Println("[tracker http] routine finished")
+
 	for {
 		fmt.Println("[tracker http] requesting")
 		response, err := RequestTrackerHTTP(torrent, peerID, port)

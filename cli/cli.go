@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"flag"
 	"os"
 )
 
@@ -24,15 +23,19 @@ func Parse() (*Argument, error) {
 	if err != nil {
 		return nil, err
 	}
-	output := flag.String("o", workingDir, "Output directory")
-	flag.Parse()
-	args := flag.Args()
-	if len(args) < 1 {
+	output := workingDir
+	args := os.Args
+
+	if len(args) < 2 {
 		return nil, errors.New("Missing arguments")
 	}
-	torrent := args[0]
-	if checkPath(torrent) || checkPath(*output) {
+	torrent := args[1]
+
+	if len(args) >= 3 {
+		output = args[2]
+	}
+	if checkPath(torrent) || checkPath(output) {
 		return nil, errors.New("Bad arguments")
 	}
-	return &Argument{torrent, *output}, nil
+	return &Argument{torrent, output}, nil
 }

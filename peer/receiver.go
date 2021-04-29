@@ -7,20 +7,22 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"sync"
 	"time"
 )
 
-func ReceiverRoutine(ctx context.Context, wg *sync.WaitGroup, address *util.Address, connection net.Conn, messageChannel chan message.Message) {
-	wg.Add(1)
-	defer wg.Done()
-
+func ReceiverRoutine(ctx context.Context, address *util.Address, connection net.Conn, messageChannel chan message.Message) {
 	fmt.Println("[receiver ", address.String(), "] ", "routine started")
 	defer fmt.Println("[receiver ", address.String(), "] ", "routine finished")
 
 	defer close(messageChannel)
 
 	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
 		err := connection.SetReadDeadline(time.Now().Add(10 * time.Second))
 		if err != nil {
 			fmt.Println("[receiver ", address.String(), "] ", "deadline error: ", err)

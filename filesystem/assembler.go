@@ -11,12 +11,13 @@ import (
 	"os"
 )
 
-func AssembleRoutine(tor *torrent.Torrent) error {
+func AssembleRoutine(tor *torrent.Torrent, outputPath string) error {
 	reader := SerialReader{
-		torrent: tor,
-		current: nil,
-		offset:  0,
-		index:   0,
+		torrent:    tor,
+		outputPath: outputPath,
+		current:    nil,
+		offset:     0,
+		index:      0,
 	}
 
 	for _, file := range tor.Files {
@@ -45,17 +46,18 @@ func AssembleRoutine(tor *torrent.Torrent) error {
 }
 
 type SerialReader struct {
-	torrent *torrent.Torrent
-	current []byte
-	offset  int
-	index   uint32
+	torrent    *torrent.Torrent
+	outputPath string
+	current    []byte
+	offset     int
+	index      uint32
 }
 
 func (sr *SerialReader) Read(p []byte) (n int, err error) {
 	if sr.current == nil || sr.offset >= len(sr.current) {
 		fmt.Println("reading", sr.index)
 
-		sr.current, err = ioutil.ReadFile(fileName(sr.index))
+		sr.current, err = ioutil.ReadFile(fileName(sr.index, sr.outputPath))
 		if err != nil {
 			return 0, err
 		}

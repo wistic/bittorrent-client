@@ -7,6 +7,7 @@ import (
 func CreateJobChannel(tor *torrent.Torrent) (chan *Job, int) {
 	pieceChan := make(chan *Job, len(tor.PieceHashes))
 	total := tor.Length()
+	jobCount := 0
 	for i := 0; i < len(tor.PieceHashes); i += 1 {
 		if total > tor.PieceLength {
 			pieceChan <- &Job{
@@ -22,8 +23,9 @@ func CreateJobChannel(tor *torrent.Torrent) (chan *Job, int) {
 				Hash:   tor.PieceHashes[i],
 			}
 		}
+		jobCount++
 	}
-	return pieceChan, len(tor.PieceHashes)
+	return pieceChan, jobCount
 }
 
 func CreateResultChannel() chan *Result {

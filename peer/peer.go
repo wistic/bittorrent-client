@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"github.com/kr/pretty"
 	"net"
-	"sync"
 	"time"
 )
 
@@ -73,10 +72,7 @@ func Disconnect(address *util.Address, disconnect chan *util.Address) {
 	disconnect <- address
 }
 
-func WorkerRoutine(ctx context.Context, wg *sync.WaitGroup, address *util.Address, peerID *util.PeerID, infoHash *util.Hash, jobs chan *job.Job, results chan *job.Result, disconnect chan *util.Address) {
-	wg.Add(1)
-	defer wg.Done()
-
+func WorkerRoutine(ctx context.Context, address *util.Address, peerID *util.PeerID, infoHash *util.Hash, jobs chan *job.Job, results chan *job.Result, disconnect chan *util.Address) {
 	defer Disconnect(address, disconnect)
 
 	fmt.Println("[worker ", address.String(), "] ", "routine started")
@@ -107,7 +103,7 @@ func WorkerRoutine(ctx context.Context, wg *sync.WaitGroup, address *util.Addres
 	pretty.Println(bitfield)
 
 	messageChannel := make(chan message.Message, 10)
-	go ReceiverRoutine(ctx, wg, address, connection, messageChannel)
+	go ReceiverRoutine(ctx, address, connection, messageChannel)
 
 	unchoke := message.Unchoke{}
 	err = message.SendMessage(&unchoke, connection)
@@ -177,6 +173,9 @@ func WorkerRoutine(ctx context.Context, wg *sync.WaitGroup, address *util.Addres
 					case message.MsgChoke:
 						choke = true
 						fmt.Println("[worker ", address.String(), "] ", "choked")
+					case message.MsgHave:
+						have := msg.(*message.Have)
+						bitfield.SetPiece(int(have.Index))
 					case message.MsgPiece:
 						piece := msg.(*message.Piece)
 						end := piece.Begin + uint32(len(piece.Block))
