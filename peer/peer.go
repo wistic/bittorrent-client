@@ -1,6 +1,7 @@
 package peer
 
 import (
+	"bittorrent-go/filesystem"
 	"bittorrent-go/job"
 	"bittorrent-go/message"
 	"bittorrent-go/util"
@@ -194,6 +195,8 @@ func WorkerRoutine(ctx context.Context, wg *sync.WaitGroup, address *util.Addres
 			}
 
 			fmt.Println("[worker ", address.String(), "] ", "job done: ", job.Index, "hash: ", hash, "match: ", hash.Match(&job.Hash))
+
+			go filesystem.WriteRoutine(wg, job.Index, data)
 
 			continue
 		case <-ctx.Done():
